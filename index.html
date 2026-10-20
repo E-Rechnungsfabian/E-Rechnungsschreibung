@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rechnungen">
 <meta name="theme-color" content="#0b6b7f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
@@ -48,17 +51,21 @@ nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);b
 nav button{flex:1;border:0;border-radius:0;background:none;padding:14px 4px;color:var(--mute);font-weight:500}
 nav button[aria-current="page"]{color:var(--acc);font-weight:700;box-shadow:inset 0 3px 0 var(--acc)}
 #toast{position:fixed;left:16px;right:16px;bottom:88px;max-width:608px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:10px;display:none}
-.seg{display:flex;gap:8px;margin-bottom:14px}.seg button{flex:1}
+.seg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.seg button{flex:1 1 28%;padding:10px 4px;font-size:14px}
+details button{margin-bottom:8px}
 button[aria-pressed="true"]{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:700}
+#ready{position:fixed;left:16px;right:16px;bottom:88px;max-width:608px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:none;gap:10px;align-items:center;flex-wrap:wrap}
+#ready a{color:var(--acc);font-weight:700}
 .danger{color:var(--err)}
 </style>
 </head>
 <body>
 <main id="app"></main>
 <div id="toast" role="status"></div>
+<div id="ready" role="status"></div>
 <nav>
 <button data-v="new">Neu</button>
-<button data-v="list">Rechnungen</button>
+<button data-v="list">Belege</button>
 <button data-v="stamm">Stamm</button>
 <button data-v="firm">Firma</button>
 </nav>
@@ -71,12 +78,13 @@ const today=()=>new Date().toISOString().slice(0,10);
 const de=d=>d?d.split('-').reverse().join('.'):'';
 const eur=c=>(c/100).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
 const num=v=>+String(v).replace(',','.')||0;
-let S={firm:{},inv:[],next:1,cust:[],art:[]};
+let S={firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1};
 try{const r=localStorage.getItem(KEY);if(r)Object.assign(S,JSON.parse(r))}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-let view='new',armed=-1,sub='cust',E={},eI=-1;
+let view='new',armed=-1,sub='cust',E={},eI=-1,lt='RE';
+const LS=t=>t==='AN'?S.off:t==='KO'?S.kor:t==='GS'?S.gut:t==='MA'?S.mah:t==='LS'?S.lief:S.inv;
 const item=()=>({d:'',q:'1',u:'Stk',p:'',v:S.firm.ku?0:19});
-const draft=()=>({c:{},date:today(),sdate:today(),items:[item()]});
+const draft=()=>({t:'RE',c:{},date:today(),sdate:today(),items:[item()]});
 let D=draft();
 
 const line=i=>Math.round(num(i.q)*num(i.p)*100);
@@ -87,7 +95,7 @@ function calc(items,ku){
   const vat=tax.reduce((a,b)=>a+b.t,0);
   return{net,tax,vat,gross:net+vat};
 }
-function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',3500)}
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display='none',6000)}
 
 const f=(label,k,val,o={})=>`<label class="f ${o.w?'w':''}"><span>${label}</span><input data-k="${k}" value="${esc(val)}" ${o.t?`type="${o.t}"`:''} ${o.m?`inputmode="${o.m}"`:''} autocomplete="off"></label>`;
 
@@ -106,28 +114,32 @@ function viewFirm(){
   ${f('Handelsregisternummer (falls vorhanden)','firm.reg',F.reg,{w:1})}
   ${f('IBAN','firm.iban',F.iban,{w:1})}${f('BIC','firm.bic',F.bic)}${f('Bank','firm.bank',F.bank)}</div></section>
   <section><h2>Voreinstellungen</h2><div class="g">
-  ${f('Rechnungsnummer-Präfix','firm.prefix',F.prefix??'RE')}${f('Zahlungsziel in Tagen','firm.days',F.days??'14',{m:'numeric'})}</div></section>`;
+  ${f('Rechnungsnummer-Präfix','firm.prefix',F.prefix??'RE')}${f('Zahlungsziel in Tagen','firm.days',F.days??'14',{m:'numeric'})}
+  ${f('Angebotsnummer-Präfix','firm.preAn',F.preAn??'AN')}${f('Gültigkeit Angebot in Tagen','firm.valid',F.valid??'30',{m:'numeric'})}${f('Präfix Rechnungskorrektur','firm.preKo',F.preKo??'RK')}${f('Gutschrift-Präfix','firm.preGs',F.preGs??'GS')}${f('Mahnungs-Präfix','firm.preMa',F.preMa??'MA')}${f('Lieferschein-Präfix','firm.preLs',F.preLs??'LS')}</div></section>
+  <section><h2>Datensicherung</h2><p class="note">Deine Daten liegen nur auf diesem Gerät. Sichere sie regelmäßig, z. B. in der Dateien-App oder in iCloud.</p><button data-export style="margin:10px 0 0">Daten exportieren</button><label class="f" style="margin-top:14px"><span>Sicherung wiederherstellen (.json)</span><input type="file" id="restore" accept="application/json,.json"></label></section>`;
 }
 
 function itemHtml(i,n){
   return `<div class="item"><div class="g">
   ${f('Beschreibung','i.'+n+'.d',i.d,{w:1})}
   ${f('Menge','i.'+n+'.q',i.q,{m:'decimal'})}${f('Einheit','i.'+n+'.u',i.u)}
-  ${f('Einzelpreis netto in €','i.'+n+'.p',i.p,{m:'decimal'})}
-  ${S.firm.ku?'':`<label class="f"><span>USt-Satz</span><select data-k="i.${n}.v">${[19,7,0].map(v=>`<option value="${v}" ${+i.v===v?'selected':''}>${v} %</option>`).join('')}</select></label>`}
-  </div><div class="row" style="margin-top:8px"><span class="lt" data-line="${n}">${eur(line(i))}</span>${D.items.length>1?`<button data-rm="${n}">Position entfernen</button>`:''}</div></div>`;
+  ${D.t==='LS'?'':f('Einzelpreis netto in €','i.'+n+'.p',i.p,{m:'decimal'})}
+  ${S.firm.ku||D.t==='LS'?'':`<label class="f"><span>USt-Satz</span><select data-k="i.${n}.v">${[19,7,0].map(v=>`<option value="${v}" ${+i.v===v?'selected':''}>${v} %</option>`).join('')}</select></label>`}
+  </div><div class="row" style="margin-top:8px"><span class="lt" data-line="${n}">${D.t==='LS'?'':eur(line(i))}</span>${D.items.length>1?`<button data-rm="${n}">Position entfernen</button>`:''}</div></div>`;
 }
 
 function viewNew(){
+  if(D.t==='MA')return viewMahn();
   const C=D.c;
-  return `<h1>Neue Rechnung</h1><p class="sub">Trage Kunde und Positionen ein, die Summen werden automatisch berechnet.</p>
+  const AN=D.t==='AN',KO=D.t==='KO',GS=D.t==='GS',LF=D.t==='LS';
+  return `<h1>${AN?'Neues Angebot':KO?'Rechnungskorrektur':GS?'Gutschrift':LF?'Neuer Lieferschein':'Neue Rechnung'}</h1>${KO||GS?`<p class="sub">${GS?'Gutschrift zu':'Korrigiert'} Rechnung <b>${esc(D.ref.no)}</b> vom ${de(D.ref.date)}. ${GS?'Entferne Positionen oder ändere Mengen, wenn nur ein Teil gutgeschrieben werden soll.':'Ändere unten, was falsch war: Die Korrektur enthält die vollständigen, richtigen Angaben und verweist auf die ursprüngliche Rechnung.'}</p><button data-kcancel style="margin-bottom:14px">${GS?'Gutschrift':'Korrektur'} verwerfen</button>`:`<div class="seg"><button data-t="RE" aria-pressed="${!AN}">Rechnung</button><button data-t="AN" aria-pressed="${AN}">Angebot</button><button data-t="LS" aria-pressed="${LF}">Lieferschein</button></div><p class="sub">Trage Kunde und Positionen ein, die Summen werden automatisch berechnet.</p>`}
   <section><h2>Kunde</h2>${pick('cust')}<div class="g">
   ${f('Name oder Firma','c.name',C.name,{w:1})}${f('Straße und Hausnummer','c.street',C.street,{w:1})}
   ${f('PLZ','c.zip',C.zip,{m:'numeric'})}${f('Ort','c.city',C.city)}${f('E-Mail','c.mail',C.mail,{t:'email',w:1})}</div></section>
-  <section><h2>Datum</h2><div class="g">${f('Rechnungsdatum','d.date',D.date,{t:'date'})}${f('Leistungsdatum','d.sdate',D.sdate,{t:'date'})}</div></section>
+  <section><h2>Datum</h2><div class="g">${f(AN?'Angebotsdatum':KO?'Korrekturdatum':GS?'Gutschriftdatum':LF?'Lieferdatum':'Rechnungsdatum','d.date',D.date,{t:'date'})}${AN||LF?'':f('Leistungsdatum','d.sdate',D.sdate,{t:'date'})}</div></section>
   <section><h2>Positionen</h2>${pick('art')}${D.items.map(itemHtml).join('')}<button data-add style="margin-top:14px;width:100%">Position hinzufügen</button></section>
-  <section class="tot" id="tot"></section>
-  <button class="pri" data-save>Rechnung speichern</button>`;
+  ${LF?'':'<section class="tot" id="tot"></section>'}
+  <button class="pri" data-save>${AN?'Angebot speichern':KO?'Korrektur speichern':GS?'Gutschrift speichern':LF?'Lieferschein speichern':'Rechnung speichern'}</button>`;
 }
 
 function totalsHtml(){
@@ -139,7 +151,7 @@ function totalsHtml(){
 }
 function totals(){
   const t=$('#tot');if(t)t.innerHTML=totalsHtml();
-  document.querySelectorAll('[data-line]').forEach(e=>e.textContent=eur(line(D.items[e.dataset.line])));
+  document.querySelectorAll('[data-line]').forEach(e=>e.textContent=D.t==='LS'?'':eur(line(D.items[e.dataset.line])));
 }
 
 const pick=t=>{const L=t==='cust'?S.cust:S.art;return L.length?`<label class="f" style="margin-bottom:12px"><span>${t==='cust'?'Aus Kundenstamm wählen':'Artikel aus Stamm hinzufügen'}</span><select data-pick="${t}"><option value="">Auswählen …</option>${L.map((x,n)=>`<option value="${n}">${esc(x.name||x.d)}</option>`).join('')}</select></label>`:''};
@@ -162,14 +174,36 @@ function saveStamm(){
   if(eI>=0)L[eI]=x;else L.push(x);
   save();E={};eI=-1;render();toast('Gespeichert.');
 }
+const LV={1:'Zahlungserinnerung',2:'1. Mahnung',3:'2. Mahnung'};
+const mSum=()=>{const g=D.ref.gross,fe=Math.round(num(D.fee)*100),ip=Math.round(num(D.interest)*100);return{g,fe,ip,t:g+fe+ip}};
+const mHtml=()=>{const s=mSum();return `<div><span>Offene Rechnung ${esc(D.ref.no)}</span><span>${eur(s.g)}</span></div>${s.fe?`<div><span>Mahngebühr</span><span>${eur(s.fe)}</span></div>`:''}${s.ip?`<div><span>Verzugszinsen</span><span>${eur(s.ip)}</span></div>`:''}<div class="b"><span>Zu zahlen</span><span>${eur(s.t)}</span></div>`};
+const mtot=()=>{const e=$('#mtot');if(e)e.innerHTML=mHtml()};
+function viewMahn(){
+  return `<h1>Mahnung</h1><p class="sub">Zur Rechnung <b>${esc(D.ref.no)}</b> vom ${de(D.ref.date)} (fällig am ${de(D.ref.due)}).</p><button data-kcancel style="margin-bottom:14px">Mahnung verwerfen</button>
+  <section><h2>Mahnung</h2><div class="g"><label class="f w"><span>Mahnstufe</span><select data-k="d.level">${[['1','Zahlungserinnerung'],['2','1. Mahnung'],['3','2. Mahnung (letzte Mahnung)']].map(([v,t])=>`<option value="${v}" ${String(D.level)===v?'selected':''}>${t}</option>`).join('')}</select></label>
+  ${f('Mahndatum','d.date',D.date,{t:'date'})}${f('Neue Zahlungsfrist in Tagen','d.days',D.days,{m:'numeric'})}
+  ${f('Mahngebühr in €','d.fee',D.fee,{m:'decimal'})}${f('Verzugszinsen in €','d.interest',D.interest,{m:'decimal'})}</div>
+  <p class="note" style="margin:10px 0 0">Gebühren und Zinsen trägst du selbst ein. Ob und in welcher Höhe sie zulässig sind, hängt von Vertrag und Kundenart ab.</p></section>
+  <section class="tot" id="mtot">${mHtml()}</section><button class="pri" data-save>Mahnung speichern</button>`;
+}
+function saveMahn(){
+  const F=S.firm;
+  if(!F.name||!F.street||!F.zip||!F.city){view='firm';render();toast('Bitte zuerst Firmenname und Anschrift eintragen.');return}
+  const due=new Date(D.date);due.setDate(due.getDate()+(parseInt(D.days)||0));
+  const no=`${F.preMa??'MA'}-${D.date.slice(0,4)}-${String(S.nextMa).padStart(4,'0')}`;
+  S.mah.unshift({no,date:D.date,due:due.toISOString().slice(0,10),level:+D.level,fee:D.fee,interest:D.interest,c:D.c,ref:D.ref,items:[],ku:!!F.ku,firm:{...F}});
+  S.nextMa++;save();D=draft();view='list';lt='MA';render();toast('Mahnung '+no+' gespeichert.');
+}
 function viewList(){
-  if(!S.inv.length)return `<h1>Rechnungen</h1><p class="sub">Noch keine Rechnungen gespeichert. Erstelle deine erste unter „Neu“.</p>`;
-  return `<h1>Rechnungen</h1><p class="sub">${S.inv.length} gespeichert</p><section>`+S.inv.map((r,n)=>{
-    const c=calc(r.items,r.ku);
-    return `<details><summary><div class="row"><span><b>${esc(r.no)}</b><br><span class="note">${esc(r.c.name)} · ${de(r.date)}</span></span><b>${eur(c.gross)}</b></div></summary>
-    <div class="lines">${r.items.map(i=>`<div><span>${esc(i.q)} ${esc(i.u)} ${esc(i.d)}</span><span>${eur(line(i))}</span></div>`).join('')}</div>
-    <p class="note">Fällig am ${de(r.due)}${r.ku?' · Kleinunternehmer ohne USt':''}</p>
-    <button data-pdf="${n}" style="margin-right:8px">PDF speichern</button><button data-zpdf="${n}" style="margin-right:8px">E-Rechnung (Test)</button><button class="danger" data-del="${n}">${armed===n?'Wirklich löschen?':'Rechnung löschen'}</button></details>`}).join('')+`</section>`;
+  const AN=lt==='AN',KO=lt==='KO',GS=lt==='GS',MA=lt==='MA',LF=lt==='LS',L=LS(lt);
+  const seg=`<div class="seg">${[['RE','Rechnungen'],['AN','Angebote'],['KO','Korrekturen'],['GS','Gutschriften'],['MA','Mahnungen'],['LS','Lieferscheine']].map(([k,t])=>`<button data-lt="${k}" aria-pressed="${lt===k}">${t}</button>`).join('')}</div>`;
+  if(!L.length)return `<h1>Belege</h1>${seg}<p class="note">Noch keine ${AN?'Angebote':KO?'Korrekturen':GS?'Gutschriften':MA?'Mahnungen':LF?'Lieferscheine':'Rechnungen'} gespeichert.${KO||GS||MA?` Starte sie bei einer Rechnung mit „${KO?'Korrigieren':GS?'Gutschrift':'Mahnung'}“.`:' Erstelle das erste unter „Neu“.'}</p>`;
+  return `<h1>Belege</h1>${seg}<p class="sub">${L.length} gespeichert</p><section>`+L.map((r,n)=>{
+    const c=MA?{gross:r.ref.gross+Math.round(num(r.fee)*100)+Math.round(num(r.interest)*100)}:calc(r.items,r.ku);
+    return `<details><summary><div class="row"><span><b>${esc(r.no)}</b><br><span class="note">${esc(r.c.name)} · ${de(r.date)}${lt==='RE'?' · '+(r.paid?'bezahlt':r.due<today()?'überfällig':'offen'):''}</span></span><b>${LF?r.items.length+' Pos.':eur(c.gross)}</b></div></summary>
+    <div class="lines">${r.items.map(i=>`<div><span>${esc(i.q)} ${esc(i.u)} ${esc(i.d)}</span><span>${LF?'':eur(line(i))}</span></div>`).join('')}</div>
+    <p class="note">${MA?`${LV[r.level]} zu Rechnung ${esc(r.ref.no)} vom ${de(r.ref.date)} · Zahlung bis ${de(r.due)}`:`${KO||GS?`${GS?'Gutschrift zu':'Korrigiert'} Rechnung ${esc(r.ref.no)} vom ${de(r.ref.date)}${GS?'':' · '}`:''}${GS?'':LF?'Lieferdatum '+de(r.date):(AN?'Gültig bis':'Fällig am')+' '+de(r.due)}`}${r.ku&&!LF?' · Kleinunternehmer ohne USt':''}</p>
+    <button data-pdf="${n}" style="margin-right:8px">PDF speichern</button>${MA?'':LF?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button>`:AN?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button><button data-tols="${n}" style="margin-right:8px">In Lieferschein umwandeln</button>`:`<button data-zpdf="${n}" style="margin-right:8px">E-Rechnung (Test)</button>${KO||GS?'':`<button data-kor="${n}" style="margin-right:8px">Korrigieren</button><button data-gs="${n}" style="margin-right:8px">Gutschrift</button><button data-tols="${n}" style="margin-right:8px">Lieferschein</button><button data-paid="${n}" style="margin-right:8px">${r.paid?'Als offen markieren':'Als bezahlt markieren'}</button>${r.paid?'':`<button data-mah="${n}" style="margin-right:8px">Mahnung</button>`}`}`}<button class="danger" data-del="${n}">${armed===n?'Wirklich löschen?':(AN?'Angebot löschen':KO?'Korrektur löschen':GS?'Gutschrift löschen':MA?'Mahnung löschen':LF?'Lieferschein löschen':'Rechnung löschen')}</button></details>`}).join('')+`</section>`;
 }
 
 function render(){
@@ -184,7 +218,7 @@ document.addEventListener('input',e=>{
   if(p[0]==='firm'){S.firm[p[1]]=v;save();if(p[1]==='ku'){D.items.forEach(i=>i.v=v?0:19);}}
   else if(p[0]==='e')E[p[1]]=v;
   else if(p[0]==='c')D.c[p[1]]=v;
-  else if(p[0]==='d')D[p[1]]=v;
+  else if(p[0]==='d'){D[p[1]]=v;if(D.t==='MA')mtot()}
   else if(p[0]==='i'){D.items[p[1]][p[2]]=v;totals()}
 });
 
@@ -193,10 +227,23 @@ document.addEventListener('click',e=>{
   if(b.dataset.v){view=b.dataset.v;armed=-1;E={};eI=-1;render();window.scrollTo(0,0)}
   else if('add' in b.dataset){D.items.push(item());render()}
   else if(b.dataset.rm!==undefined){D.items.splice(+b.dataset.rm,1);render()}
-  else if(b.dataset.del!==undefined){const n=+b.dataset.del;if(armed===n){S.inv.splice(n,1);armed=-1;save()}else armed=n;render()}
+  else if(b.dataset.del!==undefined){const n=+b.dataset.del;if(armed===n){LS(lt).splice(n,1);armed=-1;save()}else armed=n;render()}
   else if('rmlogo' in b.dataset){delete S.logo;save();render()}
   else if(b.dataset.pdf!==undefined)makePdf(+b.dataset.pdf);
   else if(b.dataset.zpdf!==undefined)makePdf(+b.dataset.zpdf,1);
+  else if(b.dataset.kor!==undefined){const r=S.inv[+b.dataset.kor];D={t:'KO',c:{...r.c},date:today(),sdate:r.sdate,items:r.items.map(i=>({...i})),ref:{no:r.no,date:r.date}};view='new';render();window.scrollTo(0,0)}
+  else if(b.dataset.tols!==undefined){const r=LS(lt)[+b.dataset.tols];D={t:'LS',c:{...r.c},date:today(),items:r.items.map(i=>({...i}))};view='new';render();window.scrollTo(0,0);toast('Als Lieferschein übernommen. Bitte prüfen und speichern.')}
+  else if(b.dataset.paid!==undefined){const r=S.inv[+b.dataset.paid];r.paid=!r.paid;save();render()}
+  else if(b.dataset.mah!==undefined){const r=S.inv[+b.dataset.mah];D={t:'MA',c:{...r.c},date:today(),level:'1',days:'7',fee:'',interest:'',ref:{no:r.no,date:r.date,due:r.due,gross:calc(r.items,r.ku).gross},items:[]};view='new';render();window.scrollTo(0,0)}
+  else if(b.dataset.gs!==undefined){const r=S.inv[+b.dataset.gs];D={t:'GS',c:{...r.c},date:today(),sdate:r.sdate,items:r.items.map(i=>({...i})),ref:{no:r.no,date:r.date}};view='new';render();window.scrollTo(0,0)}
+  else if('kcancel' in b.dataset){D=draft();render()}
+  else if('pshare' in b.dataset){if(pend)navigator.share({files:[pend],title:pend.name}).catch(()=>{})}
+  else if('pclose' in b.dataset)$('#ready').style.display='none';
+  else if('prest' in b.dataset){if(pendRestore){S=Object.assign({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1},pendRestore);save();D=draft();pendRestore=null;$('#ready').style.display='none';render();toast('Daten wiederhergestellt.')}}
+  else if('export' in b.dataset){const d=new Date().toISOString().slice(0,10);deliver(new File([JSON.stringify({app:'rechnungen',v:1,saved:d,data:S})],'rechnungen-backup-'+d+'.json',{type:'application/json'}))}
+  else if(b.dataset.lt){lt=b.dataset.lt;armed=-1;render()}
+  else if(b.dataset.t){D.t=b.dataset.t;render()}
+  else if(b.dataset.conv!==undefined){const r=LS(lt)[+b.dataset.conv];D={t:'RE',c:{...r.c},date:today(),sdate:lt==='LS'?r.date:today(),items:r.items.map(i=>({...i,v:S.firm.ku?0:i.v}))};view='new';render();window.scrollTo(0,0);toast('Als Rechnungsentwurf übernommen. Bitte prüfen und speichern.')}
   else if(b.dataset.sub){sub=b.dataset.sub;E={};eI=-1;armed=-1;render()}
   else if('sst' in b.dataset)saveStamm();
   else if('scancel' in b.dataset){E={};eI=-1;render()}
@@ -207,18 +254,22 @@ document.addEventListener('click',e=>{
 
 function saveInvoice(){
   const F=S.firm;
+  if(D.t==='MA')return saveMahn();
   if(!F.name||!F.street||!F.zip||!F.city){view='firm';render();toast('Bitte zuerst Firmenname und Anschrift eintragen.');return}
   if(!D.c.name){toast('Bitte den Namen des Kunden eintragen.');return}
   const items=D.items.filter(i=>i.d||num(i.p));
-  if(!items.length||items.some(i=>!i.d||!num(i.p))){toast('Jede Position braucht eine Beschreibung und einen Preis.');return}
-  const no=`${F.prefix??'RE'}-${D.date.slice(0,4)}-${String(S.next).padStart(4,'0')}`;
-  const due=new Date(D.date);due.setDate(due.getDate()+(parseInt(F.days??14)||0));
-  S.inv.unshift({no,date:D.date,sdate:D.sdate,due:due.toISOString().slice(0,10),c:D.c,items,ku:!!F.ku,firm:{...F}});
-  S.next++;save();D=draft();view='list';render();toast('Rechnung '+no+' gespeichert.');
+  if(!items.length||items.some(i=>!i.d||(D.t!=='LS'&&!num(i.p)))){toast(D.t==='LS'?'Jede Position braucht eine Bezeichnung.':'Jede Position braucht eine Beschreibung und einen Preis.');return}
+  const an=D.t==='AN',ko=D.t==='KO',gs=D.t==='GS',ls=D.t==='LS',pad=n=>String(n).padStart(4,'0');
+  const no=an?`${F.preAn??'AN'}-${D.date.slice(0,4)}-${pad(S.nextOff)}`:ls?`${F.preLs??'LS'}-${D.date.slice(0,4)}-${pad(S.nextLs)}`:gs?`${F.preGs??'GS'}-${D.date.slice(0,4)}-${pad(S.nextGs)}`:ko?`${F.preKo??'RK'}-${D.date.slice(0,4)}-${pad(S.nextKo)}`:`${F.prefix??'RE'}-${D.date.slice(0,4)}-${pad(S.next)}`;
+  const due=new Date(D.date);due.setDate(due.getDate()+(parseInt(an?(F.valid??30):gs?0:(F.days??14))||0));
+  LS(D.t).unshift({no,date:D.date,sdate:an?'':D.sdate,due:due.toISOString().slice(0,10),c:D.c,items,ku:!!F.ku,firm:{...F},...(ko||gs?{ref:D.ref,kind:D.t}:{})});
+  if(an)S.nextOff++;else if(ko)S.nextKo++;else if(gs)S.nextGs++;else if(ls)S.nextLs++;else S.next++;
+  save();D=draft();view='list';lt=ko?'KO':gs?'GS':ls?'LS':an?'AN':'RE';render();toast((an?'Angebot ':ko?'Rechnungskorrektur ':gs?'Gutschrift ':ls?'Lieferschein ':'Rechnung ')+no+' gespeichert.');
 }
 document.addEventListener('change',e=>{
   const t=e.target,pk=t.dataset.pick;
   if(pk&&t.value!==''){const n=+t.value;if(pk==='cust')D.c={...S.cust[n]};else{const a=S.art[n];D.items=D.items.filter(i=>i.d||num(i.p));D.items.push({d:a.d,q:'1',u:a.u,p:a.p,v:S.firm.ku?0:a.v})}render();return}
+  if(t.id==='restore'&&t.files[0]){const fr=new FileReader();fr.onload=()=>{try{const o=JSON.parse(fr.result);if(o.app!=='rechnungen'||!o.data||!Array.isArray(o.data.inv))throw 0;pendRestore=o.data;const d=$('#ready');d.innerHTML=`<span>Sicherung gefunden: ${o.data.inv.length} Rechnungen, ${(o.data.cust||[]).length} Kunden. Aktuelle Daten ersetzen?</span><button data-prest>Jetzt ersetzen</button><button data-pclose>Abbrechen</button>`;d.style.display='flex'}catch(x){toast('Das ist keine gültige Sicherungsdatei.')}};fr.readAsText(t.files[0]);t.value='';return}
   if(t.id!=='logo'||!t.files[0])return;
   const fr=new FileReader();
   fr.onload=()=>{const img=new Image();
@@ -238,14 +289,25 @@ function zxml(r,c){
   const ctc=o('PersonName',F.owner)+(F.tel?`<ram:TelephoneUniversalCommunication><ram:CompleteNumber>${xe(F.tel)}</ram:CompleteNumber></ram:TelephoneUniversalCommunication>`:'')+(F.mail?`<ram:EmailURIUniversalCommunication><ram:URIID>${xe(F.mail)}</ram:URIID></ram:EmailURIUniversalCommunication>`:'');
   const lines=r.items.map((i,n)=>`<ram:IncludedSupplyChainTradeLineItem><ram:AssociatedDocumentLineDocument><ram:LineID>${n+1}</ram:LineID></ram:AssociatedDocumentLineDocument><ram:SpecifiedTradeProduct><ram:Name>${xe(i.d)}</ram:Name></ram:SpecifiedTradeProduct><ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${+num(i.p).toFixed(4)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement><ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="${UN[String(i.u).trim().toLowerCase()]||'C62'}">${+num(i.q).toFixed(4)}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery><ram:SpecifiedLineTradeSettlement><ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>${cat(i.v)}</ram:CategoryCode><ram:RateApplicablePercent>${r.ku?0:+i.v}</ram:RateApplicablePercent></ram:ApplicableTradeTax><ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${m(line(i))}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation></ram:SpecifiedLineTradeSettlement></ram:IncludedSupplyChainTradeLineItem>`).join('');
   const tax=c.tax.map(x=>`<ram:ApplicableTradeTax><ram:CalculatedAmount>${m(x.t)}</ram:CalculatedAmount><ram:TypeCode>VAT</ram:TypeCode>${r.ku?'<ram:ExemptionReason>Kein Ausweis von Umsatzsteuer gemäß § 19 UStG</ram:ExemptionReason>':''}<ram:BasisAmount>${m(x.n)}</ram:BasisAmount><ram:CategoryCode>${cat(x.v)}</ram:CategoryCode><ram:RateApplicablePercent>${x.v}</ram:RateApplicablePercent></ram:ApplicableTradeTax>`).join('');
-  const pay=F.iban?`<ram:SpecifiedTradeSettlementPaymentMeans><ram:TypeCode>58</ram:TypeCode><ram:PayeePartyCreditorFinancialAccount><ram:IBANID>${xe(F.iban.replace(/\s/g,''))}</ram:IBANID></ram:PayeePartyCreditorFinancialAccount>${F.bic?`<ram:PayeeSpecifiedCreditorFinancialInstitution><ram:BICID>${xe(F.bic.replace(/\s/g,''))}</ram:BICID></ram:PayeeSpecifiedCreditorFinancialInstitution>`:''}</ram:SpecifiedTradeSettlementPaymentMeans>`:'';
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"><rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext><rsm:ExchangedDocument><ram:ID>${xe(r.no)}</ram:ID><ram:TypeCode>380</ram:TypeCode><ram:IssueDateTime>${dt(r.date)}</ram:IssueDateTime></rsm:ExchangedDocument><rsm:SupplyChainTradeTransaction>${lines}<ram:ApplicableHeaderTradeAgreement><ram:SellerTradeParty>${F.vatid?'':o('ID',F.taxno)}${o('Name',F.name)}${F.reg?`<ram:SpecifiedLegalOrganization>${o('ID',F.reg)}</ram:SpecifiedLegalOrganization>`:''}${ctc?`<ram:DefinedTradeContact>${ctc}</ram:DefinedTradeContact>`:''}${addr(F.zip,F.street,F.city)}${em(F.mail)}${F.vatid?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${xe(F.vatid)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}${F.taxno?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="FC">${xe(F.taxno)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}</ram:SellerTradeParty><ram:BuyerTradeParty>${o('Name',C.name)}${addr(C.zip,C.street,C.city)}${em(C.mail)}</ram:BuyerTradeParty></ram:ApplicableHeaderTradeAgreement>${r.sdate?`<ram:ApplicableHeaderTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime>${dt(r.sdate)}</ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent></ram:ApplicableHeaderTradeDelivery>`:'<ram:ApplicableHeaderTradeDelivery/>'}<ram:ApplicableHeaderTradeSettlement>${o('PaymentReference',r.no)}<ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>${pay}${tax}<ram:SpecifiedTradePaymentTerms><ram:DueDateDateTime>${dt(r.due)}</ram:DueDateDateTime></ram:SpecifiedTradePaymentTerms><ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${m(c.net)}</ram:LineTotalAmount><ram:TaxBasisTotalAmount>${m(c.net)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${m(c.vat)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${m(c.gross)}</ram:GrandTotalAmount><ram:DuePayableAmount>${m(c.gross)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation></ram:ApplicableHeaderTradeSettlement></rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>`;
+  const pay=F.iban&&r.kind!=='GS'?`<ram:SpecifiedTradeSettlementPaymentMeans><ram:TypeCode>58</ram:TypeCode><ram:PayeePartyCreditorFinancialAccount><ram:IBANID>${xe(F.iban.replace(/\s/g,''))}</ram:IBANID></ram:PayeePartyCreditorFinancialAccount>${F.bic?`<ram:PayeeSpecifiedCreditorFinancialInstitution><ram:BICID>${xe(F.bic.replace(/\s/g,''))}</ram:BICID></ram:PayeeSpecifiedCreditorFinancialInstitution>`:''}</ram:SpecifiedTradeSettlementPaymentMeans>`:'';
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"><rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext><rsm:ExchangedDocument><ram:ID>${xe(r.no)}</ram:ID><ram:TypeCode>${r.kind==='GS'?381:r.ref?384:380}</ram:TypeCode><ram:IssueDateTime>${dt(r.date)}</ram:IssueDateTime></rsm:ExchangedDocument><rsm:SupplyChainTradeTransaction>${lines}<ram:ApplicableHeaderTradeAgreement><ram:SellerTradeParty>${F.vatid?'':o('ID',F.taxno)}${o('Name',F.name)}${F.reg?`<ram:SpecifiedLegalOrganization>${o('ID',F.reg)}</ram:SpecifiedLegalOrganization>`:''}${ctc?`<ram:DefinedTradeContact>${ctc}</ram:DefinedTradeContact>`:''}${addr(F.zip,F.street,F.city)}${em(F.mail)}${F.vatid?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${xe(F.vatid)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}${F.taxno?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="FC">${xe(F.taxno)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}</ram:SellerTradeParty><ram:BuyerTradeParty>${o('Name',C.name)}${addr(C.zip,C.street,C.city)}${em(C.mail)}</ram:BuyerTradeParty></ram:ApplicableHeaderTradeAgreement>${r.sdate?`<ram:ApplicableHeaderTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime>${dt(r.sdate)}</ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent></ram:ApplicableHeaderTradeDelivery>`:'<ram:ApplicableHeaderTradeDelivery/>'}<ram:ApplicableHeaderTradeSettlement>${o('PaymentReference',r.no)}<ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>${pay}${tax}<ram:SpecifiedTradePaymentTerms><ram:DueDateDateTime>${dt(r.due)}</ram:DueDateDateTime></ram:SpecifiedTradePaymentTerms><ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${m(c.net)}</ram:LineTotalAmount><ram:TaxBasisTotalAmount>${m(c.net)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${m(c.vat)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${m(c.gross)}</ram:GrandTotalAmount><ram:DuePayableAmount>${m(c.gross)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>${r.ref?`<ram:InvoiceReferencedDocument><ram:IssuerAssignedID>${xe(r.ref.no)}</ram:IssuerAssignedID><ram:FormattedIssueDateTime><qdt:DateTimeString format="102">${r.ref.date.replace(/-/g,'')}</qdt:DateTimeString></ram:FormattedIssueDateTime></ram:InvoiceReferencedDocument>`:''}</ram:ApplicableHeaderTradeSettlement></rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>`;
+}
+let pend=null,pendRestore=null;
+function ready(file){
+  pend=file;const u=URL.createObjectURL(file),d=$('#ready');
+  d.innerHTML=`<span>${esc(file.name)} ist fertig.</span><a href="${u}" download="${esc(file.name)}" target="_blank">Öffnen</a>${navigator.share?'<button data-pshare>Teilen</button>':''}<button data-pclose>Schließen</button>`;d.style.display='flex';
+}
+async function deliver(file){
+  const dl=window.claude&&typeof claude.use==='function'?await Promise.resolve(claude.use('downloads')).catch(()=>null):null;
+  if(dl){await dl.save({filename:file.name,data:new Uint8Array(await file.arrayBuffer())});toast('Datei gespeichert.');return}
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:file.name});return}}catch(e){if(e&&e.name==='AbortError')return}
+  ready(file);
 }
 async function makePdf(n,z){
   if(!window.PDFLib||!window.fontkit){toast('Die PDF-Bibliothek konnte nicht geladen werden. Bitte Verbindung prüfen.');return}
   try{
-  const dl=window.claude?await claude.use('downloads'):null;
-  const r=S.inv[n],F=r.firm,c=calc(r.items,r.ku),{PDFDocument,PDFName,PDFString,PDFHexString,rgb}=PDFLib;
+  const dl=window.claude&&typeof claude.use==='function'?await Promise.resolve(claude.use('downloads')).catch(()=>null):null;
+  const AN=lt==='AN',KO=lt==='KO',GS=lt==='GS',MA=lt==='MA',LF=lt==='LS',r=LS(lt)[n],F=r.firm,c=calc(r.items,r.ku),{PDFDocument,PDFName,PDFString,PDFHexString,rgb}=PDFLib;
   if(z&&!F.taxno&&!F.vatid){toast('Für die E-Rechnung fehlt die Steuernummer oder USt-IdNr. im Tab „Firma“.');return}
   const doc=await PDFDocument.create({updateMetadata:false});doc.registerFontkit(fontkit);const u8=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0)),reg=await doc.embedFont(u8(FR),{subset:true}),bol=await doc.embedFont(u8(FB),{subset:true});
   const W=595.28,H=841.89,M=56,ink=rgb(.08,.15,.18),mute=rgb(.36,.42,.45),acc=rgb(.04,.42,.5);
@@ -261,26 +323,29 @@ async function makePdf(n,z){
   y=H-200;T([F.name,F.street,F.zip+' '+F.city].join(' \xB7 '),M,{z:7,c:mute});y-=16;
   T(r.c.name,M,{b:1});y-=13;
   L([r.c.street,[r.c.zip,r.c.city].filter(Boolean).join(' ')],M,{});
-  [['Rechnungsnummer',r.no],['Rechnungsdatum',de(r.date)],['Leistungsdatum',de(r.sdate)],['Fällig am',de(r.due)]].forEach(([a,b],k)=>{const yy=H-200-k*15;T(a,330,{y:yy,z:9,c:mute});T(b,W-M,{y:yy,r:1})});
-  y=H-310;T('Rechnung '+r.no,M,{b:1,z:18});y-=30;
-  const head=()=>{T('Beschreibung',M,{z:9,c:mute});T('Menge',380,{z:9,c:mute,r:1});T('Einzelpreis',445,{z:9,c:mute,r:1});if(!r.ku)T('USt',478,{z:9,c:mute,r:1});T('Gesamt',W-M,{z:9,c:mute,r:1});y-=6;line_();y-=14};
-  head();
+  (AN?[['Angebotsnummer',r.no],['Angebotsdatum',de(r.date)],['Gültig bis',de(r.due)]]:LF?[['Lieferscheinnummer',r.no],['Lieferdatum',de(r.date)]]:MA?[['Mahnungsnummer',r.no],['Mahndatum',de(r.date)],['Zahlung bis',de(r.due)]]:GS?[['Gutschriftnummer',r.no],['Gutschriftdatum',de(r.date)],['Leistungsdatum',de(r.sdate)]]:[['Rechnungsnummer',r.no],['Rechnungsdatum',de(r.date)],['Leistungsdatum',de(r.sdate)],['Fällig am',de(r.due)]]).forEach(([a,b],k)=>{const yy=H-200-k*15;T(a,330,{y:yy,z:9,c:mute});T(b,W-M,{y:yy,r:1})});
+  y=H-310;T((AN?'Angebot ':KO?'Rechnungskorrektur ':GS?'Gutschrift ':MA?LV[r.level]+' ':LF?'Lieferschein ':'Rechnung ')+r.no,M,{b:1,z:18});y-=KO||GS?18:30;if(KO||GS){T((KO?'Diese Rechnung berichtigt die Rechnung Nr. ':'Diese Gutschrift bezieht sich auf die Rechnung Nr. ')+r.ref.no+' vom '+de(r.ref.date)+'.',M,{z:9,c:mute});y-=16}
+  const head=()=>{T('Beschreibung',M,{z:9,c:mute});T('Menge',380,{z:9,c:mute,r:1});if(!LF){T('Einzelpreis',445,{z:9,c:mute,r:1});if(!r.ku)T('USt',478,{z:9,c:mute,r:1});T('Gesamt',W-M,{z:9,c:mute,r:1})}y-=6;line_();y-=14};
+  if(MA){const tx=['Zu unserer Rechnung Nr. '+r.ref.no+' vom '+de(r.ref.date)+' konnten wir bis heute keinen Zahlungseingang feststellen. Vermutlich handelt es sich um ein Versehen. Bitte überweisen Sie den offenen Betrag bis zum '+de(r.due)+'.','Trotz unserer Zahlungserinnerung konnten wir zu unserer Rechnung Nr. '+r.ref.no+' vom '+de(r.ref.date)+' keinen Zahlungseingang feststellen. Wir bitten Sie, den offenen Betrag nun bis zum '+de(r.due)+' zu überweisen.','Trotz mehrfacher Aufforderung ist die Rechnung Nr. '+r.ref.no+' vom '+de(r.ref.date)+' weiterhin offen. Dies ist unsere letzte Mahnung. Sollte der Betrag nicht bis zum '+de(r.due)+' bei uns eingehen, behalten wir uns weitere rechtliche Schritte vor.'][r.level-1];wrap(tx,W-2*M).forEach(l=>{T(l,M);y-=14});y-=12}else head();
   r.items.forEach(i=>{const ls=wrap(i.d,235),h=ls.length*13;if(y-h<170){pg=doc.addPage([W,H]);y=H-M;head()}
-    ls.forEach((s,k)=>{const yy=y-k*13;T(s,M,{y:yy});if(!k){T(i.q+' '+i.u,380,{y:yy,r:1});T(eur(Math.round(num(i.p)*100)),445,{y:yy,r:1});if(!r.ku)T(i.v+' %',478,{y:yy,r:1});T(eur(line(i)),W-M,{y:yy,r:1})}});y-=h+6});
+    ls.forEach((s,k)=>{const yy=y-k*13;T(s,M,{y:yy});if(!k){T(i.q+' '+i.u,380,{y:yy,r:1});if(!LF){T(eur(Math.round(num(i.p)*100)),445,{y:yy,r:1});if(!r.ku)T(i.v+' %',478,{y:yy,r:1});T(eur(line(i)),W-M,{y:yy,r:1})}}});y-=h+6});
   if(y<230){pg=doc.addPage([W,H]);y=H-M}
   y-=6;line_();y-=16;
   const row=(a,b,o={})=>{T(a,330,o);T(b,W-M,{...o,r:1});y-=o.z?o.z+6:15};
-  row('Netto',eur(c.net));
+  if(LF){y-=4}else if(MA){const g=r.ref.gross,fe=Math.round(num(r.fee)*100),ip=Math.round(num(r.interest)*100),mr=(a,b,o={})=>{T(a,M,o);T(b,W-M,{...o,r:1});y-=o.z?o.z+6:15};
+    mr('Offener Rechnungsbetrag (Rechnung '+r.ref.no+')',eur(g));if(fe)mr('Mahngebühr',eur(fe));if(ip)mr('Verzugszinsen',eur(ip));y-=2;mr('Zu zahlender Betrag',eur(g+fe+ip),{b:1,z:12})}
+  else{row('Netto',eur(c.net));
   if(!r.ku)c.tax.forEach(x=>row('USt '+x.v+' % auf '+eur(x.n),eur(x.t)));
-  y-=2;row('Gesamtbetrag',eur(c.gross),{b:1,z:12});
+  y-=2;row(GS?'Gutschriftbetrag':'Gesamtbetrag',eur(c.gross),{b:1,z:12})}
   y-=18;
   const note=s=>wrap(s,W-2*M).forEach(l=>{if(y<80){pg=doc.addPage([W,H]);y=H-M}T(l,M,{z:9,c:mute});y-=12});
-  if(r.ku)note('Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.');
-  note('Bitte überweisen Sie den Betrag bis zum '+de(r.due)+' ohne Abzug.');
-  if(F.iban)note('Bankverbindung: '+[F.bank,'IBAN '+F.iban,F.bic&&'BIC '+F.bic].filter(Boolean).join(' \xB7 '));
+  if(r.ku&&!MA&&!LF)note('Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.');
+  note(LF?'Bitte prüfen Sie die Ware bei Erhalt auf Vollständigkeit und Transportschäden.':AN?'Dieses Angebot ist gültig bis zum '+de(r.due)+'.':GS?'Der Gutschriftbetrag wird Ihnen erstattet bzw. mit offenen Forderungen verrechnet.':MA?'Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie es bitte als gegenstandslos.':'Bitte überweisen Sie den Betrag bis zum '+de(r.due)+' ohne Abzug.');
+  if(F.iban&&!AN&&!GS&&!LF)note('Bankverbindung: '+[F.bank,'IBAN '+F.iban,F.bic&&'BIC '+F.bic].filter(Boolean).join(' \xB7 '));
+  if(LF){if(y<150){pg=doc.addPage([W,H]);y=H-M}y-=40;T('Ware erhalten (Datum, Unterschrift):',M,{z:9,c:mute});y-=34;pg.drawLine({start:{x:M,y},end:{x:M+240,y},thickness:.7,color:mute})}
   const fl=[[F.name,F.owner&&F.owner!==F.name&&F.owner,F.mail,F.tel&&'Tel. '+F.tel],[F.taxno&&'Steuernummer '+F.taxno,F.vatid&&'USt-IdNr. '+F.vatid]].map(a=>san(a.filter(Boolean).join(' \xB7 '))).filter(Boolean);
   doc.getPages().forEach(p=>{p.drawLine({start:{x:M,y:62},end:{x:W-M,y:62},thickness:.5,color:mute});fl.forEach((s,k)=>p.drawText(s,{x:(W-reg.widthOfTextAtSize(s,8))/2,y:50-k*11,size:8,font:reg,color:mute}))});
-  const now=new Date(),ttl='Rechnung '+r.no,au=san(F.name),cx=doc.context,ob=v=>cx.obj(v),iso=now.toISOString().replace(/\.\d+Z$/,'Z');
+  const now=new Date(),ttl=(AN?'Angebot ':KO?'Rechnungskorrektur ':GS?'Gutschrift ':MA?LV[r.level]+' ':LF?'Lieferschein ':'Rechnung ')+r.no,au=san(F.name),cx=doc.context,ob=v=>cx.obj(v),iso=now.toISOString().replace(/\.\d+Z$/,'Z');
   doc.setTitle(ttl);doc.setAuthor(au);doc.setProducer('Rechnungen-App');doc.setCreator('Rechnungen-App');doc.setCreationDate(now);doc.setModificationDate(now);
   if(z){
     const xb=new TextEncoder().encode(zxml(r,c));
@@ -296,15 +361,16 @@ async function makePdf(n,z){
     const idh=Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
     cx.trailerInfo.ID=ob([PDFHexString.of(idh),PDFHexString.of(idh)]);
   }
-  const bytes=await doc.save({useObjectStreams:false}),fn='Rechnung-'+r.no+(z?'-zugferd':'')+'.pdf';
+  const bytes=await doc.save({useObjectStreams:false}),fn=(AN?'Angebot-':KO?'Korrektur-':GS?'Gutschrift-':MA?'Mahnung-':LF?'Lieferschein-':'Rechnung-')+r.no+(z?'-zugferd':'')+'.pdf';
   if(dl)await dl.save({filename:fn,data:bytes});
   else{const file=new File([bytes],fn,{type:'application/pdf'});
-    if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],title:fn});
-    else{const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}}
-  toast('PDF gespeichert.');
-  }catch(e){if(e&&(e.code==='declined'||e.name==='AbortError'))return;toast('PDF konnte nicht erstellt werden.')}
+    try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:fn});return}}catch(e){if(e&&e.name==='AbortError')return}
+    ready(file)}
+  toast('PDF erstellt.');
+  }catch(e){if(e&&(e.code==='declined'||e.name==='AbortError'))return;toast('PDF konnte nicht erstellt werden ('+(e&&e.name?e.name+': '+e.message:e)+').')}
 }
 render();
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>
 </html>
