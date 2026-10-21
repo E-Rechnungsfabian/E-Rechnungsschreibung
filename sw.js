@@ -1,9 +1,6 @@
-const V = 'rechnungen-v1';
-const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
-const CDN = [
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js',
-  'https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js'
-];
+const V = 'rechnungen-v2';
+const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './pdf-lib.min.js', './fontkit.umd.min.js'];
+const CDN = [];
 
 self.addEventListener('install', e => {
   e.waitUntil((async () => {

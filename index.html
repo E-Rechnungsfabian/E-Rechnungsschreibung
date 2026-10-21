@@ -10,16 +10,17 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+<script src="pdf-lib.min.js"></script>
+<script>window.PDFLib||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"><\/script>')</script>
+<script src="fontkit.umd.min.js"></script>
+<script>window.fontkit||document.write('<script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"><\/script>')</script>
 <style>
 :root{--bg:#f3f6f7;--card:#fff;--ink:#14262e;--mute:#5b6c74;--line:#d5dee2;--acc:#0b6b7f;--accink:#fff;--err:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1a1f;--card:#17262d;--ink:#e6eef1;--mute:#93a5ad;--line:#2b3d46;--acc:#4fb4c8;--accink:#06222a;--err:#f2b8b5}}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#0f1a1f;--card:#17262d;--ink:#e6eef1;--mute:#93a5ad;--line:#2b3d46;--acc:#4fb4c8;--accink:#06222a;--err:#f2b8b5}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Figtree,system-ui,-apple-system,sans-serif;padding-bottom:96px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:96px}
 main{max-width:640px;margin:0 auto;padding:20px 16px}
 h1{font-size:26px;margin:4px 0 4px;letter-spacing:-.01em}
 .sub{color:var(--mute);margin:0 0 18px}
