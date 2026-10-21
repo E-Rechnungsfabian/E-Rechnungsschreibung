@@ -1,5 +1,5 @@
-const V = 'rechnungen-v2';
-const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './pdf-lib.min.js', './fontkit.umd.min.js'];
+const V = 'rechnungen-v3';
+const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './pdf-lib.min.js', './fontkit.umd.min.js', './impressum.html', './datenschutz.html'];
 const CDN = [];
 
 self.addEventListener('install', e => {

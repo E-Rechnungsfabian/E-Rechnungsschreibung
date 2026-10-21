@@ -57,11 +57,13 @@ details button{margin-bottom:8px}
 button[aria-pressed="true"]{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:700}
 #ready{position:fixed;left:16px;right:16px;bottom:88px;max-width:608px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:none;gap:10px;align-items:center;flex-wrap:wrap}
 #ready a{color:var(--acc);font-weight:700}
+footer a{color:var(--acc)}
 .danger{color:var(--err)}
 </style>
 </head>
 <body>
 <main id="app"></main>
+<footer class="note" style="text-align:center;padding:0 16px 24px"><a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></footer>
 <div id="toast" role="status"></div>
 <div id="ready" role="status"></div>
 <nav>
@@ -82,7 +84,7 @@ const num=v=>+String(v).replace(',','.')||0;
 let S={firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1};
 try{const r=localStorage.getItem(KEY);if(r)Object.assign(S,JSON.parse(r))}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-let view='new',armed=-1,sub='cust',E={},eI=-1,lt='RE';
+let view='new',armed=-1,sub='cust',E={},eI=-1,lt='RE',X={from:'',to:''};
 const LS=t=>t==='AN'?S.off:t==='KO'?S.kor:t==='GS'?S.gut:t==='MA'?S.mah:t==='LS'?S.lief:S.inv;
 const item=()=>({d:'',q:'1',u:'Stk',p:'',v:S.firm.ku?0:19});
 const draft=()=>({t:'RE',c:{},date:today(),sdate:today(),items:[item()]});
@@ -117,6 +119,13 @@ function viewFirm(){
   <section><h2>Voreinstellungen</h2><div class="g">
   ${f('Rechnungsnummer-Präfix','firm.prefix',F.prefix??'RE')}${f('Zahlungsziel in Tagen','firm.days',F.days??'14',{m:'numeric'})}
   ${f('Angebotsnummer-Präfix','firm.preAn',F.preAn??'AN')}${f('Gültigkeit Angebot in Tagen','firm.valid',F.valid??'30',{m:'numeric'})}${f('Präfix Rechnungskorrektur','firm.preKo',F.preKo??'RK')}${f('Gutschrift-Präfix','firm.preGs',F.preGs??'GS')}${f('Mahnungs-Präfix','firm.preMa',F.preMa??'MA')}${f('Lieferschein-Präfix','firm.preLs',F.preLs??'LS')}</div></section>
+  <section><h2>Aufbewahrung</h2><div class="g"><label class="f w chk"><input type="checkbox" data-k="firm.live" ${F.live?'checked':''}>Produktivmodus: Rechnungen, Korrekturen und Gutschriften nicht mehr löschbar</label></div><p class="note" style="margin:10px 0 0">Schalte das erst ein, wenn du echte Rechnungen schreibst. Fehler korrigierst du dann mit einer Rechnungskorrektur oder Gutschrift.</p></section>
+  <section><h2>DATEV-Export</h2><p class="note">Buchungsstapel (CSV) für deinen Steuerberater. Bitte stimme Kontenrahmen und Konten mit ihm ab. Leere Felder nutzen die grauen Vorschläge.</p><div class="g" style="margin-top:10px">
+  ${f('Beraternummer','firm.berater',F.berater,{m:'numeric'})}${f('Mandantennummer','firm.mandant',F.mandant,{m:'numeric'})}
+  <label class="f"><span>Kontenrahmen</span><select data-k="firm.skr"><option value="03" ${F.skr!=='04'?'selected':''}>SKR03</option><option value="04" ${F.skr==='04'?'selected':''}>SKR04</option></select></label>${f('Sachkontenlänge','firm.sl',F.sl??'4',{m:'numeric'})}
+  ${fp('Sammel-Debitorenkonto','firm.deb',F.deb,'10000')}${fp('Erlöskonto 19 %','firm.a19',F.a19,F.skr==='04'?'4400':'8400')}${fp('Erlöskonto 7 %','firm.a7',F.a7,F.skr==='04'?'4300':'8300')}${fp('Erlöskonto 0 %','firm.a0',F.a0,F.skr==='04'?'4200':'8200')}${fp('Erlöskonto Kleinunternehmer','firm.aku',F.aku,F.skr==='04'?'':'8195')}
+  ${f('Zeitraum von','x.from',X.from||(new Date().getFullYear()+'-01-01'),{t:'date'})}${f('Zeitraum bis','x.to',X.to||(new Date().getFullYear()+'-12-31'),{t:'date'})}</div>
+  <button data-xdat style="margin-top:12px">Buchungsstapel exportieren</button></section>
   <section><h2>Datensicherung</h2><p class="note">Deine Daten liegen nur auf diesem Gerät. Sichere sie regelmäßig, z. B. in der Dateien-App oder in iCloud.</p><button data-export style="margin:10px 0 0">Daten exportieren</button><label class="f" style="margin-top:14px"><span>Sicherung wiederherstellen (.json)</span><input type="file" id="restore" accept="application/json,.json"></label></section>`;
 }
 
@@ -195,6 +204,37 @@ function saveMahn(){
   S.mah.unshift({no,date:D.date,due:due.toISOString().slice(0,10),level:+D.level,fee:D.fee,interest:D.interest,c:D.c,ref:D.ref,items:[],ku:!!F.ku,firm:{...F}});
   S.nextMa++;save();D=draft();view='list';lt='MA';render();toast('Mahnung '+no+' gespeichert.');
 }
+const fp=(label,k,val,ph)=>`<label class="f"><span>${label}</span><input data-k="${k}" value="${esc(val)}" placeholder="${esc(ph)}" inputmode="numeric" autocomplete="off"></label>`;
+const DNAMES=(()=>{const a=['Umsatz (ohne Soll/Haben-Kz)','Soll/Haben-Kennzeichen','WKZ Umsatz','Kurs','Basis-Umsatz','WKZ Basis-Umsatz','Konto','Gegenkonto (ohne BU-Schlüssel)','BU-Schlüssel','Belegdatum','Belegfeld 1','Belegfeld 2','Skonto','Buchungstext','Postensperre','Diverse Adressnummer','Geschäftspartnerbank','Sachverhalt','Zinssperre','Beleglink'];for(let i=1;i<=8;i++)a.push('Beleginfo - Art '+i,'Beleginfo - Inhalt '+i);a.push('KOST1 - Kostenstelle','KOST2 - Kostenstelle','Kost-Menge','EU-Land u. UStID (Bestimmung)','EU-Steuersatz (Bestimmung)','Abw. Versteuerungsart','Sachverhalt L+L','Funktionsergänzung L+L','BU 49 Hauptfunktionstyp','BU 49 Hauptfunktionsnummer','BU 49 Funktionsergänzung');for(let i=1;i<=20;i++)a.push('Zusatzinformation - Art '+i,'Zusatzinformation- Inhalt '+i);a.push('Stück','Gewicht','Zahlweise','Forderungsart','Veranlagungsjahr','Zugeordnete Fälligkeit','Skontotyp','Auftragsnummer','Buchungstyp','USt-Schlüssel (Anzahlungen)','EU-Mitgliedstaat (Anzahlungen)','Sachverhalt L+L (Anzahlungen)','EU-Steuersatz (Anzahlungen)','Erlöskonto (Anzahlungen)','Herkunft-Kz','Leerfeld','KOST-Datum','SEPA-Mandatsreferenz','Skontosperre','Gesellschaftername','Beteiligtennummer','Identifikationsnummer','Zeichnernummer','Postensperre bis','Bezeichnung SoBil-Sachverhalt','Kennzeichen SoBil-Buchung','Festschreibung','Leistungsdatum','Datum Zuord.Steuerperiode','Fälligkeit','Generalumkehr (GU)','Steuersatz','Land','Abrechnungsreferenz','BVV-Position','EU-Land u. UStID (Ursprung)','EU-Steuersatz (Ursprung)','Abw. Skontokonto');return a})();
+const CPM={'€':128,'‚':130,'ƒ':131,'„':132,'…':133,'†':134,'‡':135,'ˆ':136,'‰':137,'Š':138,'‹':139,'Œ':140,'Ž':142,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'˜':152,'™':153,'š':154,'›':155,'œ':156,'ž':158,'Ÿ':159};
+const cp1252=s=>Uint8Array.from([...s].map(ch=>{const c=ch.codePointAt(0);return c<128||(c>=160&&c<256)?c:(CPM[ch]??63)}));
+function exportDatev(){
+  const F=S.firm,yr=new Date().getFullYear(),from=X.from||yr+'-01-01',to=X.to||yr+'-12-31',skr=F.skr==='04'?'04':'03';
+  if(!F.berater||!F.mandant){toast('Bitte zuerst Beraternummer und Mandantennummer eintragen.');return}
+  if(from.slice(0,4)!==to.slice(0,4)){toast('Bitte nur ein Kalenderjahr pro Export wählen: DATEV kennt im Beleg nur Tag und Monat.');return}
+  const A={19:F.a19||(skr==='04'?'4400':'8400'),7:F.a7||(skr==='04'?'4300':'8300'),0:F.a0||(skr==='04'?'4200':'8200')},KU=F.aku||(skr==='04'?'':'8195'),deb=F.deb||'10000';
+  const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"',amt=c=>(c/100).toFixed(2).replace('.',','),ttmm=d=>d.slice(8,10)+d.slice(5,7),b1=s=>String(s).replace(/[^0-9A-Za-z$&%*+\-\/]/g,'-').slice(0,36);
+  const out=[];let miss=false;
+  const post=(r,sh,no,date,label)=>{
+    const c=calc(r.items,r.ku);
+    c.tax.forEach(x=>{const g=x.n+x.t;if(!g)return;const ge=r.ku?KU:A[x.v];if(!ge){miss=true;return}
+      const a=Array(125).fill('');
+      a[0]=amt(g);a[1]=q(sh);a[2]=q('EUR');a[6]=deb;a[7]=ge;a[9]=ttmm(date);a[10]=q(b1(no));
+      a[11]=q(r.due?r.due.slice(8,10)+r.due.slice(5,7)+r.due.slice(2,4):'');
+      a[13]=q((label+' '+(r.c.name||'')).slice(0,60));
+      out.push(a.join(';'))});
+  };
+  const inR=d=>d>=from&&d<=to;
+  S.inv.filter(r=>inR(r.date)).forEach(r=>post(r,'S',r.no,r.date,'Rechnung'));
+  S.gut.filter(r=>inR(r.date)).forEach(r=>post(r,'H',r.ref.no,r.date,'Gutschrift '+r.no));
+  S.kor.filter(r=>inR(r.date)).forEach(r=>{const o=S.inv.find(i=>i.no===r.ref.no);if(o)post(o,'H',o.no,r.date,'Storno');post(r,'S',r.no,r.date,'Korrektur')});
+  if(miss){toast('Für einen Steuersatz fehlt ein Erlöskonto (Firma → DATEV-Export).');return}
+  if(!out.length){toast('Keine Belege im gewählten Zeitraum.');return}
+  const n=new Date(),p2=v=>String(v).padStart(2,'0'),ts=''+n.getFullYear()+p2(n.getMonth()+1)+p2(n.getDate())+p2(n.getHours())+p2(n.getMinutes())+p2(n.getSeconds())+'000',d8=d=>d.replace(/-/g,'');
+  const head=['"EXTF"',700,21,'"Buchungsstapel"',13,ts,'','"RE"','"Rechnungen-App"','',parseInt(F.berater),parseInt(F.mandant),d8(from.slice(0,4)+'-01-01'),parseInt(F.sl)||4,d8(from),d8(to),q('Rechnungen '+from.slice(0,4)),'',1,0,0,'"EUR"','','','','',q(skr),'','','',''].join(';');
+  const csv=[head,DNAMES.map(q).join(';'),...out].join('\r\n')+'\r\n';
+  deliver(new File([cp1252(csv)],'EXTF_Buchungsstapel_'+from.slice(0,4)+'.csv',{type:'text/csv'}));
+}
 function viewList(){
   const AN=lt==='AN',KO=lt==='KO',GS=lt==='GS',MA=lt==='MA',LF=lt==='LS',L=LS(lt);
   const seg=`<div class="seg">${[['RE','Rechnungen'],['AN','Angebote'],['KO','Korrekturen'],['GS','Gutschriften'],['MA','Mahnungen'],['LS','Lieferscheine']].map(([k,t])=>`<button data-lt="${k}" aria-pressed="${lt===k}">${t}</button>`).join('')}</div>`;
@@ -204,7 +244,7 @@ function viewList(){
     return `<details><summary><div class="row"><span><b>${esc(r.no)}</b><br><span class="note">${esc(r.c.name)} · ${de(r.date)}${lt==='RE'?' · '+(r.paid?'bezahlt':r.due<today()?'überfällig':'offen'):''}</span></span><b>${LF?r.items.length+' Pos.':eur(c.gross)}</b></div></summary>
     <div class="lines">${r.items.map(i=>`<div><span>${esc(i.q)} ${esc(i.u)} ${esc(i.d)}</span><span>${LF?'':eur(line(i))}</span></div>`).join('')}</div>
     <p class="note">${MA?`${LV[r.level]} zu Rechnung ${esc(r.ref.no)} vom ${de(r.ref.date)} · Zahlung bis ${de(r.due)}`:`${KO||GS?`${GS?'Gutschrift zu':'Korrigiert'} Rechnung ${esc(r.ref.no)} vom ${de(r.ref.date)}${GS?'':' · '}`:''}${GS?'':LF?'Lieferdatum '+de(r.date):(AN?'Gültig bis':'Fällig am')+' '+de(r.due)}`}${r.ku&&!LF?' · Kleinunternehmer ohne USt':''}</p>
-    <button data-pdf="${n}" style="margin-right:8px">PDF speichern</button>${MA?'':LF?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button>`:AN?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button><button data-tols="${n}" style="margin-right:8px">In Lieferschein umwandeln</button>`:`<button data-zpdf="${n}" style="margin-right:8px">E-Rechnung (Test)</button>${KO||GS?'':`<button data-kor="${n}" style="margin-right:8px">Korrigieren</button><button data-gs="${n}" style="margin-right:8px">Gutschrift</button><button data-tols="${n}" style="margin-right:8px">Lieferschein</button><button data-paid="${n}" style="margin-right:8px">${r.paid?'Als offen markieren':'Als bezahlt markieren'}</button>${r.paid?'':`<button data-mah="${n}" style="margin-right:8px">Mahnung</button>`}`}`}<button class="danger" data-del="${n}">${armed===n?'Wirklich löschen?':(AN?'Angebot löschen':KO?'Korrektur löschen':GS?'Gutschrift löschen':MA?'Mahnung löschen':LF?'Lieferschein löschen':'Rechnung löschen')}</button></details>`}).join('')+`</section>`;
+    <button data-pdf="${n}" style="margin-right:8px">PDF speichern</button>${MA?'':LF?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button>`:AN?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button><button data-tols="${n}" style="margin-right:8px">In Lieferschein umwandeln</button>`:`<button data-zpdf="${n}" style="margin-right:8px">E-Rechnung (Test)</button>${KO||GS?'':`<button data-kor="${n}" style="margin-right:8px">Korrigieren</button><button data-gs="${n}" style="margin-right:8px">Gutschrift</button><button data-tols="${n}" style="margin-right:8px">Lieferschein</button><button data-paid="${n}" style="margin-right:8px">${r.paid?'Als offen markieren':'Als bezahlt markieren'}</button>${r.paid?'':`<button data-mah="${n}" style="margin-right:8px">Mahnung</button>`}`}`}${S.firm.live&&!(AN||LF||MA)?'<span class="note">Gesperrt (Produktivmodus)</span>':''}<button class="danger" data-del="${n}"${S.firm.live&&!(AN||LF||MA)?' hidden':''}>${armed===n?'Wirklich löschen?':(AN?'Angebot löschen':KO?'Korrektur löschen':GS?'Gutschrift löschen':MA?'Mahnung löschen':LF?'Lieferschein löschen':'Rechnung löschen')}</button></details>`}).join('')+`</section>`;
 }
 
 function render(){
@@ -216,7 +256,8 @@ function render(){
 document.addEventListener('input',e=>{
   const t=e.target,k=t.dataset.k;if(!k)return;
   const v=t.type==='checkbox'?t.checked:t.value,p=k.split('.');
-  if(p[0]==='firm'){S.firm[p[1]]=v;save();if(p[1]==='ku'){D.items.forEach(i=>i.v=v?0:19);}}
+  if(p[0]==='firm'){S.firm[p[1]]=v;save();if(p[1]==='skr')render();if(p[1]==='ku'){D.items.forEach(i=>i.v=v?0:19);}}
+  else if(p[0]==='x')X[p[1]]=v;
   else if(p[0]==='e')E[p[1]]=v;
   else if(p[0]==='c')D.c[p[1]]=v;
   else if(p[0]==='d'){D[p[1]]=v;if(D.t==='MA')mtot()}
@@ -241,6 +282,7 @@ document.addEventListener('click',e=>{
   else if('pshare' in b.dataset){if(pend)navigator.share({files:[pend],title:pend.name}).catch(()=>{})}
   else if('pclose' in b.dataset)$('#ready').style.display='none';
   else if('prest' in b.dataset){if(pendRestore){S=Object.assign({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1},pendRestore);save();D=draft();pendRestore=null;$('#ready').style.display='none';render();toast('Daten wiederhergestellt.')}}
+  else if('xdat' in b.dataset)exportDatev();
   else if('export' in b.dataset){const d=new Date().toISOString().slice(0,10);deliver(new File([JSON.stringify({app:'rechnungen',v:1,saved:d,data:S})],'rechnungen-backup-'+d+'.json',{type:'application/json'}))}
   else if(b.dataset.lt){lt=b.dataset.lt;armed=-1;render()}
   else if(b.dataset.t){D.t=b.dataset.t;render()}
