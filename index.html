@@ -126,6 +126,7 @@ function viewFirm(){
   ${fp('Sammel-Debitorenkonto','firm.deb',F.deb,'10000')}${fp('Erlöskonto 19 %','firm.a19',F.a19,F.skr==='04'?'4400':'8400')}${fp('Erlöskonto 7 %','firm.a7',F.a7,F.skr==='04'?'4300':'8300')}${fp('Erlöskonto 0 %','firm.a0',F.a0,F.skr==='04'?'4200':'8200')}${fp('Erlöskonto Kleinunternehmer','firm.aku',F.aku,F.skr==='04'?'':'8195')}
   ${f('Zeitraum von','x.from',X.from||(new Date().getFullYear()+'-01-01'),{t:'date'})}${f('Zeitraum bis','x.to',X.to||(new Date().getFullYear()+'-12-31'),{t:'date'})}</div>
   <button data-xdat style="margin-top:12px">Buchungsstapel exportieren</button></section>
+  <section><h2>Archiv der Originaldateien</h2><p class="note">Jede Datei, die du aus der App erzeugst, wird beim ersten Mal unveränderbar gespeichert (mit SHA-256-Prüfwert). Weitere Ausgaben liefern immer genau diese Datei. Das Archiv liegt nur auf diesem Gerät und ist Teil der Datensicherung.</p><p class="note" id="arcinfo" style="margin:8px 0"></p><button data-arcchk style="margin-right:8px">Archiv prüfen</button><button data-arczip>Archiv als ZIP exportieren</button></section>
   <section><h2>Datensicherung</h2><p class="note">Deine Daten liegen nur auf diesem Gerät. Sichere sie regelmäßig, z. B. in der Dateien-App oder in iCloud.</p><button data-export style="margin:10px 0 0">Daten exportieren</button><label class="f" style="margin-top:14px"><span>Sicherung wiederherstellen (.json)</span><input type="file" id="restore" accept="application/json,.json"></label></section>`;
 }
 
@@ -251,6 +252,7 @@ function render(){
   $('#app').innerHTML=view==='firm'?viewFirm():view==='list'?viewList():view==='stamm'?viewStamm():viewNew();
   document.querySelectorAll('nav button').forEach(b=>b.dataset.v===view?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   totals();
+  if(view==='firm')arcInfo();
 }
 
 document.addEventListener('input',e=>{
@@ -281,9 +283,11 @@ document.addEventListener('click',e=>{
   else if('kcancel' in b.dataset){D=draft();render()}
   else if('pshare' in b.dataset){if(pend)navigator.share({files:[pend],title:pend.name}).catch(()=>{})}
   else if('pclose' in b.dataset)$('#ready').style.display='none';
-  else if('prest' in b.dataset){if(pendRestore){S=Object.assign({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1},pendRestore);save();D=draft();pendRestore=null;$('#ready').style.display='none';render();toast('Daten wiederhergestellt.')}}
+  else if('prest' in b.dataset){if(pendRestore){S=Object.assign({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1},pendRestore);save();D=draft();(async()=>{for(const r of pendArc){await arcPut({...r,bytes:unb64(r.bytes)})}pendArc=[];arcInfo()})();pendRestore=null;$('#ready').style.display='none';render();toast('Daten wiederhergestellt.')}}
   else if('xdat' in b.dataset)exportDatev();
-  else if('export' in b.dataset){const d=new Date().toISOString().slice(0,10);deliver(new File([JSON.stringify({app:'rechnungen',v:1,saved:d,data:S})],'rechnungen-backup-'+d+'.json',{type:'application/json'}))}
+  else if('export' in b.dataset)exportBackup();
+  else if('arcchk' in b.dataset)arcCheck();
+  else if('arczip' in b.dataset)arcZip();
   else if(b.dataset.lt){lt=b.dataset.lt;armed=-1;render()}
   else if(b.dataset.t){D.t=b.dataset.t;render()}
   else if(b.dataset.conv!==undefined){const r=LS(lt)[+b.dataset.conv];D={t:'RE',c:{...r.c},date:today(),sdate:lt==='LS'?r.date:today(),items:r.items.map(i=>({...i,v:S.firm.ku?0:i.v}))};view='new';render();window.scrollTo(0,0);toast('Als Rechnungsentwurf übernommen. Bitte prüfen und speichern.')}
@@ -312,7 +316,7 @@ function saveInvoice(){
 document.addEventListener('change',e=>{
   const t=e.target,pk=t.dataset.pick;
   if(pk&&t.value!==''){const n=+t.value;if(pk==='cust')D.c={...S.cust[n]};else{const a=S.art[n];D.items=D.items.filter(i=>i.d||num(i.p));D.items.push({d:a.d,q:'1',u:a.u,p:a.p,v:S.firm.ku?0:a.v})}render();return}
-  if(t.id==='restore'&&t.files[0]){const fr=new FileReader();fr.onload=()=>{try{const o=JSON.parse(fr.result);if(o.app!=='rechnungen'||!o.data||!Array.isArray(o.data.inv))throw 0;pendRestore=o.data;const d=$('#ready');d.innerHTML=`<span>Sicherung gefunden: ${o.data.inv.length} Rechnungen, ${(o.data.cust||[]).length} Kunden. Aktuelle Daten ersetzen?</span><button data-prest>Jetzt ersetzen</button><button data-pclose>Abbrechen</button>`;d.style.display='flex'}catch(x){toast('Das ist keine gültige Sicherungsdatei.')}};fr.readAsText(t.files[0]);t.value='';return}
+  if(t.id==='restore'&&t.files[0]){const fr=new FileReader();fr.onload=()=>{try{const o=JSON.parse(fr.result);if(o.app!=='rechnungen'||!o.data||!Array.isArray(o.data.inv))throw 0;pendRestore=o.data;pendArc=o.archive||[];const d=$('#ready');d.innerHTML=`<span>Sicherung gefunden: ${o.data.inv.length} Rechnungen, ${(o.data.cust||[]).length} Kunden, ${(o.archive||[]).length} archivierte Dateien. Aktuelle Daten ersetzen?</span><button data-prest>Jetzt ersetzen</button><button data-pclose>Abbrechen</button>`;d.style.display='flex'}catch(x){toast('Das ist keine gültige Sicherungsdatei.')}};fr.readAsText(t.files[0]);t.value='';return}
   if(t.id!=='logo'||!t.files[0])return;
   const fr=new FileReader();
   fr.onload=()=>{const img=new Image();
@@ -335,10 +339,55 @@ function zxml(r,c){
   const pay=F.iban&&r.kind!=='GS'?`<ram:SpecifiedTradeSettlementPaymentMeans><ram:TypeCode>58</ram:TypeCode><ram:PayeePartyCreditorFinancialAccount><ram:IBANID>${xe(F.iban.replace(/\s/g,''))}</ram:IBANID></ram:PayeePartyCreditorFinancialAccount>${F.bic?`<ram:PayeeSpecifiedCreditorFinancialInstitution><ram:BICID>${xe(F.bic.replace(/\s/g,''))}</ram:BICID></ram:PayeeSpecifiedCreditorFinancialInstitution>`:''}</ram:SpecifiedTradeSettlementPaymentMeans>`:'';
   return `<?xml version="1.0" encoding="UTF-8"?>\n<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100" xmlns:qdt="urn:un:unece:uncefact:data:standard:QualifiedDataType:100"><rsm:ExchangedDocumentContext><ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext><rsm:ExchangedDocument><ram:ID>${xe(r.no)}</ram:ID><ram:TypeCode>${r.kind==='GS'?381:r.ref?384:380}</ram:TypeCode><ram:IssueDateTime>${dt(r.date)}</ram:IssueDateTime></rsm:ExchangedDocument><rsm:SupplyChainTradeTransaction>${lines}<ram:ApplicableHeaderTradeAgreement><ram:SellerTradeParty>${F.vatid?'':o('ID',F.taxno)}${o('Name',F.name)}${F.reg?`<ram:SpecifiedLegalOrganization>${o('ID',F.reg)}</ram:SpecifiedLegalOrganization>`:''}${ctc?`<ram:DefinedTradeContact>${ctc}</ram:DefinedTradeContact>`:''}${addr(F.zip,F.street,F.city)}${em(F.mail)}${F.vatid?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${xe(F.vatid)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}${F.taxno?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="FC">${xe(F.taxno)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}</ram:SellerTradeParty><ram:BuyerTradeParty>${o('Name',C.name)}${addr(C.zip,C.street,C.city)}${em(C.mail)}</ram:BuyerTradeParty></ram:ApplicableHeaderTradeAgreement>${r.sdate?`<ram:ApplicableHeaderTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime>${dt(r.sdate)}</ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent></ram:ApplicableHeaderTradeDelivery>`:'<ram:ApplicableHeaderTradeDelivery/>'}<ram:ApplicableHeaderTradeSettlement>${o('PaymentReference',r.no)}<ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>${pay}${tax}<ram:SpecifiedTradePaymentTerms><ram:DueDateDateTime>${dt(r.due)}</ram:DueDateDateTime></ram:SpecifiedTradePaymentTerms><ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${m(c.net)}</ram:LineTotalAmount><ram:TaxBasisTotalAmount>${m(c.net)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${m(c.vat)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${m(c.gross)}</ram:GrandTotalAmount><ram:DuePayableAmount>${m(c.gross)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>${r.ref?`<ram:InvoiceReferencedDocument><ram:IssuerAssignedID>${xe(r.ref.no)}</ram:IssuerAssignedID><ram:FormattedIssueDateTime><qdt:DateTimeString format="102">${r.ref.date.replace(/-/g,'')}</qdt:DateTimeString></ram:FormattedIssueDateTime></ram:InvoiceReferencedDocument>`:''}</ram:ApplicableHeaderTradeSettlement></rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>`;
 }
-let pend=null,pendRestore=null;
+let pend=null,pendRestore=null,pendArc=[];
 function ready(file){
   pend=file;const u=URL.createObjectURL(file),d=$('#ready');
   d.innerHTML=`<span>${esc(file.name)} ist fertig.</span><a href="${u}" download="${esc(file.name)}" target="_blank">Öffnen</a>${navigator.share?'<button data-pshare>Teilen</button>':''}<button data-pclose>Schließen</button>`;d.style.display='flex';
+}
+let _db=null;
+const arc=()=>_db||(_db=new Promise((res,rej)=>{try{const q=indexedDB.open('rechnungen-archiv',1);q.onupgradeneeded=()=>q.result.createObjectStore('files',{keyPath:'id'});q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}catch(e){rej(e)}}));
+const arcTx=async(mode,fn)=>{const db=await arc();return new Promise((res,rej)=>{const t=db.transaction('files',mode),q=fn(t.objectStore('files'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})};
+const arcGet=id=>arcTx('readonly',s=>s.get(id)).catch(()=>null);
+const arcAll=()=>arcTx('readonly',s=>s.getAll());
+const arcPut=r=>arcTx('readwrite',s=>s.add(r)).then(()=>true,()=>false);
+const sha256=async u=>{try{return [...new Uint8Array(await crypto.subtle.digest('SHA-256',u))].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){return ''}};
+const b64=u=>{let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0));
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){
+  const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+  const d=new Date(),dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate(),tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  for(const f of files){
+    const nm=enc.encode(f.name),crc=crc32(f.data),n=f.data.length,lh=new DataView(new ArrayBuffer(30)),ch=new DataView(new ArrayBuffer(46));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(10,tm,true);lh.setUint16(12,dt,true);lh.setUint32(14,crc,true);lh.setUint32(18,n,true);lh.setUint32(22,n,true);lh.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(lh.buffer),nm,f.data);
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(12,tm,true);ch.setUint16(14,dt,true);ch.setUint32(16,crc,true);ch.setUint32(20,n,true);ch.setUint32(24,n,true);ch.setUint16(28,nm.length,true);ch.setUint32(42,off,true);
+    cd.push(new Uint8Array(ch.buffer),nm);off+=30+nm.length+n;
+  }
+  const sz=cd.reduce((s,u)=>s+u.length,0),eo=new DataView(new ArrayBuffer(22));
+  eo.setUint32(0,0x06054b50,true);eo.setUint16(8,files.length,true);eo.setUint16(10,files.length,true);eo.setUint32(12,sz,true);eo.setUint32(16,off,true);
+  return new Blob([...parts,...cd,new Uint8Array(eo.buffer)]);
+}
+async function arcInfo(){const e=$('#arcinfo');if(!e)return;try{const a=await arcAll();e.textContent=a.length+' Dateien archiviert ('+(a.reduce((s,r)=>s+r.size,0)/1048576).toFixed(2).replace('.',',')+' MB).'}catch(x){e.textContent='Das Archiv ist in diesem Browser nicht verfügbar.'}}
+async function arcCheck(){
+  try{const a=await arcAll(),bad=[];for(const r of a){const h=await sha256(r.bytes);if(h&&h!==r.sha256)bad.push(r.name)}
+    toast(!a.length?'Das Archiv ist noch leer.':bad.length?'ACHTUNG: '+bad.length+' Datei(en) weichen vom Prüfwert ab: '+bad.slice(0,3).join(', '):'Archiv geprüft: Alle '+a.length+' Dateien sind unverändert.')}
+  catch(e){toast('Das Archiv ist in diesem Browser nicht verfügbar.')}
+}
+async function arcZip(){
+  try{const a=await arcAll();if(!a.length){toast('Das Archiv ist noch leer.');return}
+    const FD={RE:'Rechnungen',AN:'Angebote',KO:'Korrekturen',GS:'Gutschriften',MA:'Mahnungen',LS:'Lieferscheine'};
+    const files=a.map(r=>({name:(FD[r.type]||'Sonstige')+'/'+r.name,data:r.bytes}));
+    const rows=['Belegart;Nummer;Variante;Datei;Größe (Byte);SHA-256;Erzeugt am',...a.map(r=>[FD[r.type]||r.type,r.no,r.variant,r.name,r.size,r.sha256,r.created].join(';'))];
+    files.push({name:'index.csv',data:new TextEncoder().encode('\uFEFF'+rows.join('\r\n')+'\r\n')});
+    deliver(new File([zipStore(files)],'rechnungen-archiv-'+new Date().toISOString().slice(0,10)+'.zip',{type:'application/zip'}));
+  }catch(e){toast('Das Archiv konnte nicht exportiert werden.')}
+}
+async function exportBackup(){
+  const d=new Date().toISOString().slice(0,10);let files=[];
+  try{files=(await arcAll()).map(r=>({...r,bytes:b64(r.bytes)}))}catch(e){}
+  deliver(new File([JSON.stringify({app:'rechnungen',v:2,saved:d,data:S,archive:files})],'rechnungen-backup-'+d+'.json',{type:'application/json'}));
 }
 async function deliver(file){
   const dl=window.claude&&typeof claude.use==='function'?await Promise.resolve(claude.use('downloads')).catch(()=>null):null;
@@ -352,6 +401,9 @@ async function makePdf(n,z){
   const dl=window.claude&&typeof claude.use==='function'?await Promise.resolve(claude.use('downloads')).catch(()=>null):null;
   const AN=lt==='AN',KO=lt==='KO',GS=lt==='GS',MA=lt==='MA',LF=lt==='LS',r=LS(lt)[n],F=r.firm,c=calc(r.items,r.ku),{PDFDocument,PDFName,PDFString,PDFHexString,rgb}=PDFLib;
   if(z&&!F.taxno&&!F.vatid){toast('Für die E-Rechnung fehlt die Steuernummer oder USt-IdNr. im Tab „Firma“.');return}
+  const key=lt+':'+r.no+':'+(z?'z':'p'),fnA=(AN?'Angebot-':KO?'Korrektur-':GS?'Gutschrift-':MA?'Mahnung-':LF?'Lieferschein-':'Rechnung-')+r.no+(z?'-zugferd':'')+'.pdf';
+  const old=await arcGet(key);
+  if(old){await deliver(new File([old.bytes],old.name,{type:'application/pdf'}));toast('Archivierte Originaldatei ausgegeben.');return}
   const doc=await PDFDocument.create({updateMetadata:false});doc.registerFontkit(fontkit);const u8=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0)),reg=await doc.embedFont(u8(FR),{subset:true}),bol=await doc.embedFont(u8(FB),{subset:true});
   const W=595.28,H=841.89,M=56,ink=rgb(.08,.15,.18),mute=rgb(.36,.42,.45),acc=rgb(.04,.42,.5);
   const san=s=>String(s??'').replace(/[^\x20-\x7E\xA0-\xFF\u20AC\u2013\u2014\u2018\u2019\u201C\u201D\u201E\u2022]/g,'?');
@@ -404,12 +456,10 @@ async function makePdf(n,z){
     const idh=Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
     cx.trailerInfo.ID=ob([PDFHexString.of(idh),PDFHexString.of(idh)]);
   }
-  const bytes=await doc.save({useObjectStreams:false}),fn=(AN?'Angebot-':KO?'Korrektur-':GS?'Gutschrift-':MA?'Mahnung-':LF?'Lieferschein-':'Rechnung-')+r.no+(z?'-zugferd':'')+'.pdf';
-  if(dl)await dl.save({filename:fn,data:bytes});
-  else{const file=new File([bytes],fn,{type:'application/pdf'});
-    try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:fn});return}}catch(e){if(e&&e.name==='AbortError')return}
-    ready(file)}
-  toast('PDF erstellt.');
+  const bytes=await doc.save({useObjectStreams:false}),fn=fnA;
+  const ok=await arcPut({id:key,type:lt,no:r.no,variant:z?'zugferd':'pdf',name:fn,bytes,size:bytes.length,sha256:await sha256(bytes),created:new Date().toISOString()});
+  if(!ok)toast('Hinweis: Das Archiv ist in diesem Browser nicht verfügbar, die Datei wurde nicht archiviert.');
+  await deliver(new File([bytes],fn,{type:'application/pdf'}));
   }catch(e){if(e&&(e.code==='declined'||e.name==='AbortError'))return;toast('PDF konnte nicht erstellt werden ('+(e&&e.name?e.name+': '+e.message:e)+').')}
 }
 render();
