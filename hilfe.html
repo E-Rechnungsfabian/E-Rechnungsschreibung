@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="robots" content="noindex"><title>Hilfe</title>
+<style>
+:root{--bg:#f3f6f7;--card:#fff;--ink:#14262e;--mute:#5b6c74;--line:#d5dee2;--acc:#0b6b7f;--warn:#fff3c4;--warnink:#4a3b00}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#0f1a1f;--card:#17262d;--ink:#e6eef1;--mute:#93a5ad;--line:#2b3d46;--acc:#4fb4c8;--warn:#4a3d10;--warnink:#fbeab0}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+main{max-width:680px;margin:0 auto;padding:20px 16px 48px}h1{font-size:26px;margin:8px 0 6px}
+a{color:var(--acc)}.mute{color:var(--mute);font-size:14px}
+details{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:10px 0;padding:0 16px}
+summary{cursor:pointer;font-weight:700;padding:14px 0;list-style:none}summary::-webkit-details-marker{display:none}
+summary::after{content:"+";float:right;color:var(--mute)}details[open] summary::after{content:"\2212"}
+details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
+.note{background:var(--warn);color:var(--warnink);border-radius:10px;padding:10px 12px}
+</style></head><body><main>
+<p><a href="index.html">← Zurück zur App</a></p>
+<h1>Hilfe</h1>
+<p class="mute">Kurzanleitung für alle Funktionen. Tippe auf einen Abschnitt, um ihn aufzuklappen.</p>
+
+<details open><summary>1. Erste Schritte</summary>
+<p><b>Installieren:</b> Öffne die Adresse der App in Safari, tippe auf das Teilen-Symbol und wähle „Zum Home-Bildschirm“. Danach startet sie wie eine normale App und funktioniert auch ohne Internet.</p>
+<p><b>Zuerst den Tab „Firma“ ausfüllen.</b> Diese Angaben erscheinen auf allen Belegen:</p>
+<ul>
+<li>Firmenname, Anschrift, E-Mail, Telefon</li>
+<li><b>Steuernummer oder USt-IdNr.</b> (mindestens eine von beiden, sonst ist keine E-Rechnung möglich)</li>
+<li>IBAN, BIC und Bank für die Zahlungsangaben</li>
+<li><b>Kleinunternehmer:</b> Setze den Haken, wenn du keine Umsatzsteuer ausweist (§ 19 UStG)</li>
+<li>Logo (PNG oder JPG): erscheint oben links auf den PDFs, ohne Logo steht dort dein Firmenname</li>
+<li>Handelsregisternummer, falls vorhanden (optional)</li>
+<li>Präfixe für die Belegnummern und Fristen: Zahlungsziel (Standard 14 Tage), Gültigkeit von Angeboten (30 Tage)</li>
+</ul>
+<p>Änderungen in „Firma“ gelten für neue Belege. Bereits gespeicherte Belege behalten ihre Angaben.</p>
+</details>
+
+<details><summary>2. Kunden und Artikel (Tab „Stamm“)</summary>
+<p>Hier legst du Kunden (Name, Anschrift, E-Mail) und Artikel (Bezeichnung, Einheit, Netto-Preis, USt-Satz) an, bearbeitest und löschst sie. Oben schaltest du zwischen „Kunden“ und „Artikel“ um.</p>
+<p>Im Tab „Neu“ übernimmst du sie dann mit einem Tipp: <b>Aus Kundenstamm wählen</b> füllt die Kundendaten, <b>Artikel aus Stamm hinzufügen</b> fügt eine Position hinzu. Die Auswahlfelder erscheinen erst, wenn du etwas im Stamm angelegt hast.</p>
+</details>
+
+<details><summary>3. Eine Rechnung schreiben</summary>
+<ol>
+<li>Tab „Neu“, oben „Rechnung“ wählen.</li>
+<li>Kunde eintragen oder aus dem Stamm wählen.</li>
+<li>Rechnungsdatum und Leistungsdatum prüfen.</li>
+<li>Positionen eintragen: Beschreibung, Menge, Einheit, Einzelpreis netto, USt-Satz. Mit „Position hinzufügen“ kommen weitere dazu. Die Summen werden automatisch berechnet.</li>
+<li>„Rechnung speichern“. Die Rechnungsnummer vergibt die App fortlaufend (z. B. RE-2026-0001).</li>
+</ol>
+<p><b>Einheiten:</b> Für die E-Rechnung erkennt die App Stk, Stück, Std, h, Stunde, Tag, Tage, Monat, kg, m, km, l und pauschal. Alles andere wird als „Stück“ gemeldet.</p>
+</details>
+
+<details><summary>4. PDF und E-Rechnung ausgeben (Tab „Belege“)</summary>
+<p>Im Tab „Belege“ wählst du oben die Belegart (Rechnungen, Angebote, Korrekturen, Gutschriften, Mahnungen, Lieferscheine) und tippst einen Beleg an, um ihn aufzuklappen.</p>
+<ul>
+<li><b>PDF speichern:</b> erzeugt eine normale PDF-Rechnung.</li>
+<li><b>E-Rechnung (Test):</b> erzeugt eine PDF im Format PDF/A-3 mit eingebetteter XML-Datei (ZUGFeRD, Profil EN 16931). Diese Datei verschickst du, wenn dein Kunde eine E-Rechnung braucht.</li>
+</ul>
+<p>Danach öffnet sich das Teilen-Menü deines iPhones. Erscheint es nicht, zeigt die App unten eine Leiste mit <b>Öffnen</b> und <b>Teilen</b>: Tippe darauf.</p>
+<p><b>Archiv:</b> Beim ersten Erzeugen wird die Datei unveränderbar archiviert. Jede weitere Ausgabe liefert genau diese Datei.</p>
+<p class="note">Ob und ab wann du E-Rechnungen ausstellen musst, hängt von deinem Umsatz und deinen Kunden ab. Frag dazu deinen Steuerberater. Prüfe die erste echte E-Rechnung bitte einmal mit einem Validator.</p>
+</details>
+
+<details><summary>5. Angebote und Lieferscheine</summary>
+<ul>
+<li><b>Angebot:</b> In „Neu“ oben „Angebot“ wählen. Es hat eine eigene Nummer und ein „Gültig bis“. Am gespeicherten Angebot gibt es <b>In Rechnung umwandeln</b> und <b>In Lieferschein umwandeln</b>.</li>
+<li><b>Lieferschein:</b> In „Neu“ oben „Lieferschein“ wählen oder aus einer Rechnung bzw. einem Angebot erzeugen. Er zeigt Mengen, keine Preise, und hat unten eine Zeile für die Unterschrift des Empfängers. Aus dem Lieferschein kannst du mit <b>In Rechnung umwandeln</b> eine Rechnung machen.</li>
+</ul>
+<p>Angebote und Lieferscheine sind keine Rechnungen, deshalb gibt es dafür keine E-Rechnung.</p>
+</details>
+
+<details><summary>6. Korrigieren und gutschreiben</summary>
+<p>Beides startest du an einer gespeicherten Rechnung in „Belege“.</p>
+<ul>
+<li><b>Korrigieren:</b> erzeugt eine Rechnungskorrektur. Du änderst, was falsch war. Die Korrektur enthält die vollständigen, richtigen Angaben, verweist auf die ursprüngliche Rechnung (Nummer und Datum) und ersetzt sie. Als E-Rechnung wird sie als Korrekturrechnung gekennzeichnet.</li>
+<li><b>Gutschrift:</b> erzeugt eine Gutschrift mit Verweis auf die Rechnung. Standardmäßig sind alle Positionen übernommen (Komplett-Gutschrift). Für eine Teilgutschrift entfernst du Positionen oder änderst Mengen.</li>
+</ul>
+<p>Die Originalrechnung bleibt unverändert in der Liste. Welche Variante buchhalterisch passt, besonders wenn die Rechnung schon bezahlt ist, klärst du mit deinem Steuerberater.</p>
+</details>
+
+<details><summary>7. Bezahlt und Mahnungen</summary>
+<p>Bei jeder Rechnung steht in der Liste „offen“, „überfällig“ oder „bezahlt“. Mit <b>Als bezahlt markieren</b> (und wieder zurück) pflegst du das selbst.</p>
+<p>Bei nicht bezahlten Rechnungen gibt es den Button <b>Mahnung</b>:</p>
+<ul>
+<li>Mahnstufe wählen: Zahlungserinnerung, 1. Mahnung oder 2. Mahnung (letzte Mahnung).</li>
+<li>Mahndatum und neue Zahlungsfrist (Standard 7 Tage) prüfen.</li>
+<li>Mahngebühr und Verzugszinsen trägst du selbst als Euro-Betrag ein. Die App berechnet sie nicht. Ob und in welcher Höhe sie zulässig sind, hängt von Vertrag und Kundenart ab.</li>
+</ul>
+<p>Das PDF enthält einen Standardtext je Stufe. Eine Mahnung ist keine Rechnung, es gibt dafür keine E-Rechnung.</p>
+</details>
+
+<details><summary>8. Archiv, Datensicherung und Produktivmodus (Tab „Firma“)</summary>
+<ul>
+<li><b>Archiv der Originaldateien:</b> „Archiv prüfen“ vergleicht alle Dateien mit ihrem Prüfwert (SHA-256). „Archiv als ZIP exportieren“ erzeugt eine ZIP mit allen Dateien und einer Übersicht (index.csv).</li>
+<li><b>Datensicherung:</b> „Daten exportieren“ speichert alles (Firmendaten, Logo, Stamm, Belege und Archiv) in einer .json-Datei. Lege sie in der Dateien-App oder in iCloud ab. Mit „Sicherung wiederherstellen“ spielst du sie zurück. Das ersetzt deine aktuellen Daten, die App fragt vorher nach. Schon archivierte Dateien werden dabei nicht überschrieben.</li>
+<li><b>Produktivmodus:</b> Ist er an, lassen sich Rechnungen, Korrekturen und Gutschriften nicht mehr löschen. Schalte ihn erst ein, wenn du echte Rechnungen schreibst. Fehler korrigierst du dann mit einer Korrektur oder Gutschrift.</li>
+</ul>
+<p class="note">Deine Daten liegen nur auf deinem Gerät. Sichere sie regelmäßig. Das gilt auch für die gesetzlichen Aufbewahrungsfristen, bei Rechnungen derzeit mindestens 8 Jahre.</p>
+</details>
+
+<details><summary>9. DATEV-Export</summary>
+<p>Unter „Firma → DATEV-Export“ erzeugst du einen Buchungsstapel (CSV) für deinen Steuerberater.</p>
+<ol>
+<li>Beraternummer und Mandantennummer eintragen (bekommst du von deinem Steuerberater).</li>
+<li>Kontenrahmen (SKR03 oder SKR04) und Sachkontenlänge wählen.</li>
+<li>Sammel-Debitorenkonto und Erlöskonten prüfen. Leere Felder zeigen graue Vorschläge. Stimme die Konten mit deinem Steuerberater ab.</li>
+<li>Zeitraum wählen (ein Kalenderjahr pro Export) und „Buchungsstapel exportieren“ tippen.</li>
+</ol>
+<p><b>Was exportiert wird:</b> Rechnungen (Soll Debitor, Haben Erlöskonto), Gutschriften (umgekehrt, mit der Nummer der Originalrechnung) und Rechnungskorrekturen (Storno der Originalrechnung plus neue Buchung). Angebote, Mahnungen und Lieferscheine werden nicht exportiert.</p>
+</details>
+
+<details><summary>10. Häufige Fragen</summary>
+<p><b>Das PDF wird nicht gespeichert.</b> Tippe in der Leiste unten auf „Öffnen“ oder „Teilen“. Erscheint eine Fehlermeldung, notiere den Text in Klammern.</p>
+<p><b>Meine Daten sind weg oder die App ist leer.</b> Die App auf dem Home-Bildschirm kann einen eigenen Datenspeicher haben, getrennt von Safari. Außerdem sind die Daten weg, wenn du die Website-Daten löschst. Spiele deine Sicherung unter „Firma → Datensicherung“ zurück.</p>
+<p><b>Die App zeigt eine alte Version.</b> Öffne sie einmal mit Internet. Schließe sie danach komplett und starte sie neu.</p>
+<p><b>Geht das ohne Internet?</b> Ja, nachdem du die App einmal mit Internet geöffnet hast. Das gilt auch für PDFs und E-Rechnungen.</p>
+<p><b>Wo liegen meine Daten?</b> Nur auf deinem Gerät, in diesem Browser. Siehe auch die <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+</details>
+
+<details><summary>11. Wichtige Hinweise</summary>
+<ul>
+<li>Die App ist ein Hilfsmittel und ersetzt keine Steuer- oder Rechtsberatung. Für die Richtigkeit deiner Belege bist du selbst verantwortlich.</li>
+<li>Eine Verfahrensdokumentation, wie sie die GoBD verlangen, ist nicht Teil der App. Du beschreibst deine Abläufe separat.</li>
+<li>Prüfe neue Belegarten, E-Rechnungen und den DATEV-Export vor dem ersten echten Einsatz mit deinem Steuerberater.</li>
+</ul>
+</details>
+
+<p class="mute">Stand: Oktober 2026 · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></p>
+</main></body></html>
