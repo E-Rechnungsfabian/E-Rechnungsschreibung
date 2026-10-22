@@ -4,5 +4,5 @@
 // Ohne diese Angaben arbeitet die App nur lokal (ohne Konto und Cloud).
 window.APP_CONFIG = {
   SUPABASE_URL: '',   // z. B. https://abcdefgh.supabase.co
-  SUPABASE_KEY: ''    // anon- oder publishable-Schluessel
+  SUPABASE_KEY: 'sb_publishable_ad981GQ0Ef6WRvBPXBuUSg_EJ6H4XE6'    // publishable-Schluessel
 };
