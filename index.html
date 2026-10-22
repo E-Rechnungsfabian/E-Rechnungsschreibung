@@ -404,7 +404,7 @@ async function exportBackup(){
 const CFG=window.APP_CONFIG||{},CLOUD=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_KEY);
 const DEFS=()=>({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1});
 const isEmpty=()=>!(S.inv.length||S.off.length||S.kor.length||S.gut.length||S.mah.length||S.lief.length||S.cust.length||S.art.length||S.firm.name);
-let SES=null,SY={uid:'',version:0,dirty:false},AUS='',chg=0,busy=false,recov=null,pendCloud=null,delArm=false,outArm=false,timer=null;
+let SES=null,SY={uid:'',version:0,dirty:false},AUS='',WEL='',chg=0,busy=false,recov=null,pendCloud=null,delArm=false,outArm=false,timer=null;
 try{SES=JSON.parse(localStorage.getItem('rechnungen-session')||'null')}catch(e){}
 try{Object.assign(SY,JSON.parse(localStorage.getItem('rechnungen-sync')||'{}'))}catch(e){}
 const saveSes=()=>{try{if(SES)localStorage.setItem('rechnungen-session',JSON.stringify(SES));else localStorage.removeItem('rechnungen-session')}catch(e){}};
@@ -434,11 +434,13 @@ async function tok(){
   return SES.access;
 }
 function hashLogin(){
-  const h=location.hash.slice(1);if(h.indexOf('access_token')<0)return false;
+  const h=location.hash.slice(1);
+  if(/error_code|error=/.test(h)){history.replaceState(null,'',location.pathname+location.search);AUS='Der Link ist ungültig oder abgelaufen oder wurde schon benutzt. Melde dich an oder fordere bei Bedarf einen neuen Link an („Passwort vergessen“ bzw. erneut registrieren).';view='firm';return false}
+  if(h.indexOf('access_token')<0)return false;
   const p=new URLSearchParams(h),at=p.get('access_token');
   history.replaceState(null,'',location.pathname+location.search);
-  if(p.get('type')==='recovery'){recov=at;view='firm';return true}
-  if(at&&p.get('refresh_token')){setSes({access_token:at,refresh_token:p.get('refresh_token'),expires_in:+p.get('expires_in')||3600});view='firm';return true}
+  if(p.get('type')==='recovery'){recov=at;view='firm';AUS='Dein Link ist gültig. Bitte vergib jetzt ein neues Passwort.';return true}
+  if(at&&p.get('refresh_token')){setSes({access_token:at,refresh_token:p.get('refresh_token'),expires_in:+p.get('expires_in')||3600});WEL=p.get('type')==='signup'?'E-Mail-Adresse bestätigt. Du bist jetzt angemeldet.':p.get('type')==='email_change'?'Die neue E-Mail-Adresse ist bestätigt.':'Du bist jetzt angemeldet.';view='firm';return true}
   return false;
 }
 async function doLogin(){
@@ -477,7 +479,7 @@ async function afterLogin(){
     else if(isEmpty()||(SY.uid===SES.uid&&!SY.dirty))loadCloud(r[0]);
     else{pendCloud=r[0];ask('Auf diesem Ger\u00e4t und in deinem Konto sind schon Daten. Welchen Stand m\u00f6chtest du behalten? Der andere wird \u00fcberschrieben.')}
     await syncArchive();
-    authStat('Angemeldet.');render();
+    authStat(WEL?'✓ '+WEL:'Angemeldet.');if(WEL){toast('✓ '+WEL);WEL=''}render();
   }catch(e){authStat('Synchronisierung fehlgeschlagen: '+e.message);render()}
 }
 async function push(my=chg){
