@@ -410,6 +410,7 @@ try{Object.assign(SY,JSON.parse(localStorage.getItem('rechnungen-sync')||'{}'))}
 const saveSes=()=>{try{if(SES)localStorage.setItem('rechnungen-session',JSON.stringify(SES));else localStorage.removeItem('rechnungen-session')}catch(e){}};
 const saveSy=()=>{try{localStorage.setItem('rechnungen-sync',JSON.stringify(SY))}catch(e){}};
 const val=id=>{const e=$(id);return e&&e.value!==undefined?e.value:''};
+const RED=()=>encodeURIComponent(location.origin+location.pathname.replace(/[^\/]*$/,''));
 function chip(){const e=$('#authchip');if(!e)return;e.textContent=!CLOUD?'':SES?'\u2601 '+(SY.dirty?'\u00c4nderungen warten auf den Upload':'Synchronisiert')+' \u00b7 '+(SES.email||''):'Nicht angemeldet \u00b7 Daten nur auf diesem Ger\u00e4t'}
 function authStat(m){AUS=m;const e=$('#authstat');if(e)e.textContent=m;chip()}
 async function call(path,{method='GET',body,token,headers}={}){
@@ -451,14 +452,14 @@ async function doSignup(){
   const em=val('#aemail').trim(),pw=val('#apass');
   if(!em||pw.length<8){authStat('Bitte E-Mail und ein Passwort mit mindestens 8 Zeichen eingeben.');return}
   authStat('Registrierung \u2026');
-  try{const j=await call('/auth/v1/signup',{method:'POST',body:{email:em,password:pw}});
+  try{const j=await call('/auth/v1/signup?redirect_to='+RED(),{method:'POST',body:{email:em,password:pw}});
     if(j&&j.access_token){setSes(j);await afterLogin()}
     else authStat('Fast geschafft: Wir haben dir eine E-Mail geschickt. Best\u00e4tige darin deine Adresse und melde dich dann an.')}
   catch(e){authStat('Fehler: '+e.message)}
 }
 async function doReset(){
   const em=val('#aemail').trim();if(!em){authStat('Bitte zuerst deine E-Mail-Adresse eintragen.');return}
-  try{await call('/auth/v1/recover',{method:'POST',body:{email:em}});authStat('Wenn die Adresse bekannt ist, kommt gleich eine E-Mail mit einem Link zum Zur\u00fccksetzen.')}
+  try{await call('/auth/v1/recover?redirect_to='+RED(),{method:'POST',body:{email:em}});authStat('Wenn die Adresse bekannt ist, kommt gleich eine E-Mail mit einem Link zum Zur\u00fccksetzen.')}
   catch(e){authStat('Fehler: '+e.message)}
 }
 async function doNewPw(){
