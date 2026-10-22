@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rechnungen">
 <meta name="theme-color" content="#0b6b7f">
+<script src="config.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
@@ -63,7 +64,7 @@ footer a{color:var(--acc)}
 </head>
 <body>
 <main id="app"></main>
-<footer class="note" style="text-align:center;padding:0 16px 24px"><a href="hilfe.html">Hilfe</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></footer>
+<footer class="note" style="text-align:center;padding:0 16px 24px"><div id="authchip" style="margin-bottom:6px"></div><a href="hilfe.html">Hilfe</a> · <a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a></footer>
 <div id="toast" role="status"></div>
 <div id="ready" role="status"></div>
 <nav>
@@ -83,7 +84,8 @@ const eur=c=>(c/100).toLocaleString('de-DE',{style:'currency',currency:'EUR'});
 const num=v=>+String(v).replace(',','.')||0;
 let S={firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1};
 try{const r=localStorage.getItem(KEY);if(r)Object.assign(S,JSON.parse(r))}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const saveLocal=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const save=()=>{saveLocal();cloudDirty()};
 let view='new',armed=-1,sub='cust',E={},eI=-1,lt='RE',X={from:'',to:''};
 const LS=t=>t==='AN'?S.off:t==='KO'?S.kor:t==='GS'?S.gut:t==='MA'?S.mah:t==='LS'?S.lief:S.inv;
 const item=()=>({d:'',q:'1',u:'Stk',p:'',v:S.firm.ku?0:19});
@@ -105,6 +107,7 @@ const f=(label,k,val,o={})=>`<label class="f ${o.w?'w':''}"><span>${label}</span
 function viewFirm(){
   const F=S.firm;
   return `<h1>Firmendaten</h1><p class="sub">Diese Angaben erscheinen als Absender auf deinen Rechnungen. Sie bleiben auf diesem Gerät gespeichert.</p>
+  ${authSection()}
   <section><h2>Logo</h2>${S.logo?`<img src="${S.logo}" alt="Dein Logo" style="max-height:80px;max-width:100%;display:block;margin-bottom:12px">`:'<p class="note">Das Logo erscheint oben links auf deinen Rechnungen. Ohne Logo steht dort dein Firmenname.</p>'}
   <label class="f"><span>PNG oder JPG auswählen</span><input type="file" id="logo" accept="image/png,image/jpeg,image/webp"></label>${S.logo?'<button data-rmlogo style="margin-top:10px">Logo entfernen</button>':''}</section>
   <section><h2>Absender</h2><div class="g">
@@ -126,8 +129,8 @@ function viewFirm(){
   ${fp('Sammel-Debitorenkonto','firm.deb',F.deb,'10000')}${fp('Erlöskonto 19 %','firm.a19',F.a19,F.skr==='04'?'4400':'8400')}${fp('Erlöskonto 7 %','firm.a7',F.a7,F.skr==='04'?'4300':'8300')}${fp('Erlöskonto 0 %','firm.a0',F.a0,F.skr==='04'?'4200':'8200')}${fp('Erlöskonto Kleinunternehmer','firm.aku',F.aku,F.skr==='04'?'':'8195')}
   ${f('Zeitraum von','x.from',X.from||(new Date().getFullYear()+'-01-01'),{t:'date'})}${f('Zeitraum bis','x.to',X.to||(new Date().getFullYear()+'-12-31'),{t:'date'})}</div>
   <button data-xdat style="margin-top:12px">Buchungsstapel exportieren</button></section>
-  <section><h2>Archiv der Originaldateien</h2><p class="note">Jede Datei, die du aus der App erzeugst, wird beim ersten Mal unveränderbar gespeichert (mit SHA-256-Prüfwert). Weitere Ausgaben liefern immer genau diese Datei. Das Archiv liegt nur auf diesem Gerät und ist Teil der Datensicherung.</p><p class="note" id="arcinfo" style="margin:8px 0"></p><button data-arcchk style="margin-right:8px">Archiv prüfen</button><button data-arczip>Archiv als ZIP exportieren</button></section>
-  <section><h2>Datensicherung</h2><p class="note">Deine Daten liegen nur auf diesem Gerät. Sichere sie regelmäßig, z. B. in der Dateien-App oder in iCloud.</p><button data-export style="margin:10px 0 0">Daten exportieren</button><label class="f" style="margin-top:14px"><span>Sicherung wiederherstellen (.json)</span><input type="file" id="restore" accept="application/json,.json"></label></section>`;
+  <section><h2>Archiv der Originaldateien</h2><p class="note">Jede Datei, die du aus der App erzeugst, wird beim ersten Mal unveränderbar gespeichert (mit SHA-256-Prüfwert). Weitere Ausgaben liefern immer genau diese Datei. Das Archiv liegt auf diesem Gerät (mit Konto zusätzlich in der Cloud) und ist Teil der Datensicherung.</p><p class="note" id="arcinfo" style="margin:8px 0"></p><button data-arcchk style="margin-right:8px">Archiv prüfen</button><button data-arczip>Archiv als ZIP exportieren</button></section>
+  <section><h2>Datensicherung</h2><p class="note">Deine Daten liegen auf diesem Gerät (mit Konto zusätzlich in der Cloud). Sichere sie zusätzlich regelmäßig, z. B. in der Dateien-App oder in iCloud.</p><button data-export style="margin:10px 0 0">Daten exportieren</button><label class="f" style="margin-top:14px"><span>Sicherung wiederherstellen (.json)</span><input type="file" id="restore" accept="application/json,.json"></label></section>`;
 }
 
 function itemHtml(i,n){
@@ -284,6 +287,15 @@ document.addEventListener('click',e=>{
   else if('pshare' in b.dataset){if(pend)navigator.share({files:[pend],title:pend.name}).catch(()=>{})}
   else if('pclose' in b.dataset)$('#ready').style.display='none';
   else if('prest' in b.dataset){if(pendRestore){S=Object.assign({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1},pendRestore);save();D=draft();(async()=>{for(const r of pendArc){await arcPut({...r,bytes:unb64(r.bytes)})}pendArc=[];arcInfo()})();pendRestore=null;$('#ready').style.display='none';render();toast('Daten wiederhergestellt.')}}
+  else if('login' in b.dataset)doLogin();
+  else if('signup' in b.dataset)doSignup();
+  else if('reset' in b.dataset)doReset();
+  else if('newpw' in b.dataset)doNewPw();
+  else if('logout' in b.dataset)doLogout();
+  else if('delacc' in b.dataset)doDelAcc();
+  else if('syncnow' in b.dataset){chg++;SY.dirty=true;saveSy();sync()}
+  else if('ccloud' in b.dataset){if(pendCloud){loadCloud(pendCloud);pendCloud=null;$('#ready').style.display='none';render();syncArchive().catch(()=>{});toast('Cloud-Stand geladen.')}}
+  else if('cmine' in b.dataset){if(pendCloud){SY.version=pendCloud.version;SY.uid=SES.uid;pendCloud=null;$('#ready').style.display='none';chg++;SY.dirty=true;saveSy();sync()}}
   else if('xdat' in b.dataset)exportDatev();
   else if('export' in b.dataset)exportBackup();
   else if('arcchk' in b.dataset)arcCheck();
@@ -389,6 +401,146 @@ async function exportBackup(){
   try{files=(await arcAll()).map(r=>({...r,bytes:b64(r.bytes)}))}catch(e){}
   deliver(new File([JSON.stringify({app:'rechnungen',v:2,saved:d,data:S,archive:files})],'rechnungen-backup-'+d+'.json',{type:'application/json'}));
 }
+const CFG=window.APP_CONFIG||{},CLOUD=!!(CFG.SUPABASE_URL&&CFG.SUPABASE_KEY);
+const DEFS=()=>({firm:{},inv:[],next:1,cust:[],art:[],off:[],nextOff:1,kor:[],nextKo:1,gut:[],nextGs:1,mah:[],nextMa:1,lief:[],nextLs:1});
+const isEmpty=()=>!(S.inv.length||S.off.length||S.kor.length||S.gut.length||S.mah.length||S.lief.length||S.cust.length||S.art.length||S.firm.name);
+let SES=null,SY={uid:'',version:0,dirty:false},AUS='',chg=0,busy=false,recov=null,pendCloud=null,delArm=false,outArm=false,timer=null;
+try{SES=JSON.parse(localStorage.getItem('rechnungen-session')||'null')}catch(e){}
+try{Object.assign(SY,JSON.parse(localStorage.getItem('rechnungen-sync')||'{}'))}catch(e){}
+const saveSes=()=>{try{if(SES)localStorage.setItem('rechnungen-session',JSON.stringify(SES));else localStorage.removeItem('rechnungen-session')}catch(e){}};
+const saveSy=()=>{try{localStorage.setItem('rechnungen-sync',JSON.stringify(SY))}catch(e){}};
+const val=id=>{const e=$(id);return e&&e.value!==undefined?e.value:''};
+function chip(){const e=$('#authchip');if(!e)return;e.textContent=!CLOUD?'':SES?'\u2601 '+(SY.dirty?'\u00c4nderungen warten auf den Upload':'Synchronisiert')+' \u00b7 '+(SES.email||''):'Nicht angemeldet \u00b7 Daten nur auf diesem Ger\u00e4t'}
+function authStat(m){AUS=m;const e=$('#authstat');if(e)e.textContent=m;chip()}
+async function call(path,{method='GET',body,token,headers}={}){
+  const h={apikey:CFG.SUPABASE_KEY,'Content-Type':'application/json',...(headers||{})};
+  if(token)h.Authorization='Bearer '+token;
+  const r=await fetch(CFG.SUPABASE_URL.replace(/\/$/,'')+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body)});
+  const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){j=t}
+  if(!r.ok){const e=new Error((j&&(j.msg||j.message||j.error_description||j.error))||'HTTP '+r.status);e.status=r.status;throw e}
+  return j;
+}
+function setSes(j){
+  let p={};try{p=JSON.parse(atob(j.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')))}catch(e){}
+  SES={access:j.access_token,refresh:j.refresh_token,exp:Date.now()/1000+(j.expires_in||3600)-30,uid:(j.user&&j.user.id)||p.sub,email:(j.user&&j.user.email)||p.email};saveSes();
+}
+async function tok(){
+  if(!SES)throw new Error('Nicht angemeldet');
+  if(SES.exp<Date.now()/1000){
+    try{setSes(await call('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:SES.refresh}}))}
+    catch(e){if(e.status===400||e.status===401||e.status===403){SES=null;saveSes();chip();render()}throw e}
+  }
+  return SES.access;
+}
+function hashLogin(){
+  const h=location.hash.slice(1);if(h.indexOf('access_token')<0)return false;
+  const p=new URLSearchParams(h),at=p.get('access_token');
+  history.replaceState(null,'',location.pathname+location.search);
+  if(p.get('type')==='recovery'){recov=at;view='firm';return true}
+  if(at&&p.get('refresh_token')){setSes({access_token:at,refresh_token:p.get('refresh_token'),expires_in:+p.get('expires_in')||3600});view='firm';return true}
+  return false;
+}
+async function doLogin(){
+  const em=val('#aemail').trim(),pw=val('#apass');
+  if(!em||!pw){authStat('Bitte E-Mail und Passwort eingeben.');return}
+  authStat('Anmeldung \u2026');
+  try{setSes(await call('/auth/v1/token?grant_type=password',{method:'POST',body:{email:em,password:pw}}));await afterLogin()}
+  catch(e){authStat(e.status===400?'E-Mail oder Passwort stimmt nicht (oder die E-Mail-Adresse ist noch nicht best\u00e4tigt).':'Fehler: '+e.message)}
+}
+async function doSignup(){
+  const em=val('#aemail').trim(),pw=val('#apass');
+  if(!em||pw.length<8){authStat('Bitte E-Mail und ein Passwort mit mindestens 8 Zeichen eingeben.');return}
+  authStat('Registrierung \u2026');
+  try{const j=await call('/auth/v1/signup',{method:'POST',body:{email:em,password:pw}});
+    if(j&&j.access_token){setSes(j);await afterLogin()}
+    else authStat('Fast geschafft: Wir haben dir eine E-Mail geschickt. Best\u00e4tige darin deine Adresse und melde dich dann an.')}
+  catch(e){authStat('Fehler: '+e.message)}
+}
+async function doReset(){
+  const em=val('#aemail').trim();if(!em){authStat('Bitte zuerst deine E-Mail-Adresse eintragen.');return}
+  try{await call('/auth/v1/recover',{method:'POST',body:{email:em}});authStat('Wenn die Adresse bekannt ist, kommt gleich eine E-Mail mit einem Link zum Zur\u00fccksetzen.')}
+  catch(e){authStat('Fehler: '+e.message)}
+}
+async function doNewPw(){
+  const pw=val('#apass');if(pw.length<8){authStat('Das Passwort braucht mindestens 8 Zeichen.');return}
+  try{await call('/auth/v1/user',{method:'PUT',token:recov,body:{password:pw}});recov=null;render();authStat('Passwort ge\u00e4ndert. Bitte melde dich jetzt an.')}
+  catch(e){authStat('Fehler: '+e.message)}
+}
+function ask(msg){const d=$('#ready');d.innerHTML='<span>'+msg+'</span><button data-ccloud>Cloud-Stand laden</button><button data-cmine>Stand dieses Ger\u00e4ts hochladen</button>';d.style.display='flex'}
+function loadCloud(row){S=Object.assign(DEFS(),row.data);saveLocal();SY={uid:SES.uid,version:row.version,dirty:false};saveSy();D=draft()}
+async function afterLogin(){
+  authStat('Synchronisiere \u2026');
+  try{
+    const t=await tok(),r=await call('/rest/v1/user_data?select=data,version',{token:t});
+    if(!r||!r.length){SY.version=0;SY.uid=SES.uid;if(!isEmpty())await push(chg);else{SY.dirty=false;saveSy()}}
+    else if(isEmpty()||(SY.uid===SES.uid&&!SY.dirty))loadCloud(r[0]);
+    else{pendCloud=r[0];ask('Auf diesem Ger\u00e4t und in deinem Konto sind schon Daten. Welchen Stand m\u00f6chtest du behalten? Der andere wird \u00fcberschrieben.')}
+    await syncArchive();
+    authStat('Angemeldet.');render();
+  }catch(e){authStat('Synchronisierung fehlgeschlagen: '+e.message);render()}
+}
+async function push(my=chg){
+  const t=await tok(),now=new Date().toISOString();let r;
+  try{
+    if(SY.version>0)r=await call('/rest/v1/user_data?user_id=eq.'+SES.uid+'&version=eq.'+SY.version,{method:'PATCH',token:t,headers:{Prefer:'return=representation'},body:{data:S,version:SY.version+1,updated_at:now}});
+    else r=await call('/rest/v1/user_data',{method:'POST',token:t,headers:{Prefer:'return=representation'},body:{user_id:SES.uid,data:S,version:1,updated_at:now}});
+  }catch(e){if(e.status===409){await conflict();return}throw e}
+  if(!r||!r.length){await conflict();return}
+  SY.version=r[0].version;SY.uid=SES.uid;if(chg===my)SY.dirty=false;saveSy();chip();
+}
+async function conflict(){
+  const t=await tok(),r=await call('/rest/v1/user_data?select=data,version',{token:t});
+  if(!r||!r.length){SY.version=0;await push();return}
+  pendCloud=r[0];ask('Die Daten in deinem Konto wurden auf einem anderen Ger\u00e4t ge\u00e4ndert. Welchen Stand m\u00f6chtest du behalten? Der andere wird \u00fcberschrieben.');
+}
+async function sync(){
+  if(!CLOUD||!SES||busy||pendCloud)return;
+  if(!navigator.onLine){authStat('Offline: Die \u00c4nderungen werden sp\u00e4ter hochgeladen.');return}
+  busy=true;const my=chg;
+  try{await push(my);await syncArchive();authStat(pendCloud?'Bitte entscheide, welcher Stand gelten soll.':SY.dirty?'Es gibt noch nicht hochgeladene \u00c4nderungen.':'Synchronisiert.')}
+  catch(e){authStat('Synchronisierung fehlgeschlagen: '+e.message)}
+  finally{busy=false}
+}
+function cloudDirty(){if(!CLOUD||!SES)return;chg++;SY.dirty=true;saveSy();clearTimeout(timer);timer=setTimeout(sync,2500);chip()}
+async function refreshFromCloud(){
+  if(!SES||!CLOUD||busy||pendCloud||!navigator.onLine)return;
+  try{
+    const t=await tok(),r=await call('/rest/v1/user_data?select=version',{token:t});
+    if(r&&r.length&&r[0].version>SY.version){
+      if(SY.dirty){await conflict();return}
+      const f=await call('/rest/v1/user_data?select=data,version',{token:t});loadCloud(f[0]);render();toast('Daten aus der Cloud aktualisiert.');
+    }else if(SY.dirty)sync();
+    chip();
+  }catch(e){}
+}
+async function syncArchive(){
+  if(!CLOUD||!SES)return;
+  const t=await tok(),rem=new Set(((await call('/rest/v1/archive?select=id',{token:t}))||[]).map(r=>r.id)),loc=await arcAll(),have=new Set(loc.map(r=>r.id));
+  for(const r of loc)if(!rem.has(r.id)){const {bytes,...meta}=r;await call('/rest/v1/archive?on_conflict=user_id,id',{method:'POST',token:t,headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},body:{user_id:SES.uid,id:r.id,meta,b64:b64(bytes)}})}
+  for(const id of rem)if(!have.has(id)){const j=await call('/rest/v1/archive?id=eq.'+encodeURIComponent(id)+'&select=meta,b64',{token:t});if(j&&j[0])await arcPut({...j[0].meta,bytes:unb64(j[0].b64)})}
+}
+async function wipeLocal(){S=DEFS();saveLocal();SY={uid:'',version:0,dirty:false};saveSy();pendCloud=null;D=draft();try{await arcTx('readwrite',s=>s.clear())}catch(e){}}
+async function doLogout(){
+  let fail=false;
+  try{if(SY.dirty)await push();await syncArchive()}catch(e){fail=true}
+  if((SY.dirty||fail||pendCloud)&&!outArm){outArm=true;authStat('Es gibt noch nicht hochgeladene \u00c4nderungen. Tippe noch einmal auf \u201eAbmelden\u201c, um trotzdem abzumelden. Diese \u00c4nderungen gehen dann verloren.');return}
+  outArm=false;
+  try{if(SES)await call('/auth/v1/logout',{method:'POST',token:SES.access})}catch(e){}
+  SES=null;saveSes();await wipeLocal();render();authStat('Abgemeldet. Die Daten wurden von diesem Ger\u00e4t entfernt.');
+}
+async function doDelAcc(){
+  if(!delArm){delArm=true;authStat('Dein Konto und alle Cloud-Daten, auch die archivierten Rechnungsdateien, werden unwiderruflich gel\u00f6scht. Lade vorher eine Datensicherung und das Archiv als ZIP herunter. Tippe noch einmal auf \u201eKonto l\u00f6schen\u201c, um fortzufahren.');return}
+  delArm=false;
+  try{const t=await tok();await call('/rest/v1/rpc/delete_my_account',{method:'POST',token:t,body:{}})}
+  catch(e){authStat('Das Konto konnte nicht gel\u00f6scht werden: '+e.message);return}
+  SES=null;saveSes();SY={uid:'',version:0,dirty:false};saveSy();render();authStat('Das Konto wurde gel\u00f6scht. Die Daten auf diesem Ger\u00e4t sind noch vorhanden.');
+}
+function authSection(){
+  if(!CLOUD)return `<section><h2>Konto</h2><p class="note">Die Cloud-Anbindung ist nicht eingerichtet. Die App arbeitet nur lokal auf diesem Ger\u00e4t.</p></section>`;
+  if(recov)return `<section><h2>Neues Passwort</h2><label class="f"><span>Neues Passwort (mindestens 8 Zeichen)</span><input id="apass" type="password" autocomplete="new-password"></label><button class="pri" style="margin-top:12px" data-newpw>Passwort speichern</button><p class="note" id="authstat" style="margin:10px 0 0">${esc(AUS)}</p></section>`;
+  if(SES)return `<section><h2>Konto</h2><p style="margin:0 0 6px">Angemeldet als <b>${esc(SES.email||'')}</b></p><p class="note" id="authstat" style="margin:0 0 8px">${esc(AUS)}</p><button data-syncnow style="margin:0 8px 8px 0">Jetzt synchronisieren</button><button data-logout style="margin:0 8px 8px 0">Abmelden</button><button class="danger" data-delacc>Konto l\u00f6schen</button></section>`;
+  return `<section><h2>Konto</h2><p class="note" style="margin:0 0 10px">Melde dich an, damit deine Daten in der Cloud gesichert und auf mehreren Ger\u00e4ten verf\u00fcgbar sind. Ohne Anmeldung bleiben sie nur auf diesem Ger\u00e4t.</p><div class="g"><label class="f w"><span>E-Mail</span><input id="aemail" type="email" autocomplete="email"></label><label class="f w"><span>Passwort (mindestens 8 Zeichen)</span><input id="apass" type="password" autocomplete="current-password"></label></div><div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"><button class="pri" style="width:auto;flex:1" data-login>Anmelden</button><button data-signup>Registrieren</button><button data-reset>Passwort vergessen</button></div><p class="note" id="authstat" style="margin:10px 0 0">${esc(AUS)}</p></section>`;
+}
 async function deliver(file){
   const dl=window.claude&&typeof claude.use==='function'?await Promise.resolve(claude.use('downloads')).catch(()=>null):null;
   if(dl){await dl.save({filename:file.name,data:new Uint8Array(await file.arrayBuffer())});toast('Datei gespeichert.');return}
@@ -459,10 +611,15 @@ async function makePdf(n,z){
   const bytes=await doc.save({useObjectStreams:false}),fn=fnA;
   const ok=await arcPut({id:key,type:lt,no:r.no,variant:z?'zugferd':'pdf',name:fn,bytes,size:bytes.length,sha256:await sha256(bytes),created:new Date().toISOString()});
   if(!ok)toast('Hinweis: Das Archiv ist in diesem Browser nicht verfügbar, die Datei wurde nicht archiviert.');
+  else if(CLOUD&&SES)syncArchive().catch(()=>{});
   await deliver(new File([bytes],fn,{type:'application/pdf'}));
   }catch(e){if(e&&(e.code==='declined'||e.name==='AbortError'))return;toast('PDF konnte nicht erstellt werden ('+(e&&e.name?e.name+': '+e.message:e)+').')}
 }
+const hl=CLOUD?hashLogin():false;
 render();
+if(CLOUD){if(SES&&hl&&!recov)afterLogin();else if(SES)refreshFromCloud();chip()}
+window.addEventListener('online',()=>{if(SY.dirty)sync()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&SES&&CLOUD)refreshFromCloud()});
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
 </body>

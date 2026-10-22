@@ -14,13 +14,13 @@ a{color:var(--acc)}.todo{background:var(--warn);color:var(--warnink);border-radi
 <p>[Vor- und Nachname bzw. Firma], [Straße und Hausnummer], [PLZ und Ort], E-Mail: [E-Mail-Adresse]</p>
 
 <h2>2. Worum es geht</h2>
-<p>Diese App läuft vollständig in Ihrem Browser. Die Daten, die Sie eingeben (z. B. Firmendaten, Kundendaten, Artikel, Rechnungen und andere Belege), werden ausschließlich lokal auf Ihrem Gerät gespeichert und nicht an den Betreiber übertragen. Der Betreiber hat keinen Zugriff darauf. Es gibt derzeit kein Benutzerkonto, keine Registrierung, keine Cookies, keine Analyse- und keine Werbewerkzeuge.</p>
+<p>Diese App läuft vollständig in Ihrem Browser. Die Daten, die Sie eingeben (z. B. Firmendaten, Kundendaten, Artikel, Rechnungen und andere Belege), werden ohne Benutzerkonto ausschließlich lokal auf Ihrem Gerät gespeichert und nicht an den Betreiber übertragen. Der Betreiber hat dann keinen Zugriff darauf. Ein Benutzerkonto ist optional (siehe Abschnitt 8). Es gibt keine Cookies, keine Analyse- und keine Werbewerkzeuge.</p>
 
 <h2>3. Hosting (GitHub Pages)</h2>
 <p>Die App wird über GitHub Pages ausgeliefert. Anbieter ist GitHub Inc., 88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, USA (ein Unternehmen der Microsoft-Gruppe). Beim Aufruf der App verarbeitet GitHub technisch notwendige Verbindungsdaten, insbesondere Ihre IP-Adresse, Datum und Uhrzeit des Abrufs, die angeforderte Datei und Angaben zu Ihrem Browser, um die Seite bereitzustellen und die Sicherheit zu gewährleisten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einem sicheren und stabilen Betrieb). Eine Übermittlung in die USA kann stattfinden. [Bitte prüfen und ergänzen: Stand der Zertifizierung von GitHub/Microsoft nach dem EU-US Data Privacy Framework bzw. verwendete Standardvertragsklauseln.]</p>
 
 <h2>4. Lokale Speicherung im Browser</h2>
-<p>Damit die App funktioniert, speichert sie Ihre Eingaben im lokalen Speicher Ihres Browsers (Local Storage) sowie Programmdateien für den Offline-Betrieb im Cache Ihres Geräts (Service Worker). Das ist für den von Ihnen gewünschten Dienst technisch erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Diese Daten verlassen Ihr Gerät nicht. Sie können sie jederzeit löschen, indem Sie die Website-Daten in Ihrem Browser entfernen oder die App vom Home-Bildschirm löschen. Bitte beachten Sie: Dann sind auch Ihre gespeicherten Belege weg. Nutzen Sie die Funktion „Datensicherung“ in der App.</p>
+<p>Damit die App funktioniert, speichert sie Ihre Eingaben im lokalen Speicher Ihres Browsers (Local Storage) sowie Programmdateien für den Offline-Betrieb im Cache Ihres Geräts (Service Worker). Das ist für den von Ihnen gewünschten Dienst technisch erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Ohne Benutzerkonto verlassen diese Daten Ihr Gerät nicht. Sie können sie jederzeit löschen, indem Sie die Website-Daten in Ihrem Browser entfernen oder die App vom Home-Bildschirm löschen. Bitte beachten Sie: Dann sind auch Ihre gespeicherten Belege weg. Nutzen Sie die Funktion „Datensicherung“ in der App.</p>
 
 <h2>5. Sicherungsdateien und Exporte</h2>
 <p>Wenn Sie Sicherungen, PDF-Dateien oder Exporte erzeugen, entscheiden allein Sie, wo diese gespeichert oder an wen sie weitergegeben werden.</p>
@@ -29,12 +29,19 @@ a{color:var(--acc)}.todo{background:var(--warn);color:var(--warnink);border-radi
 <p>Wenn Sie in der App personenbezogene Daten Dritter (z. B. Ihrer Kundinnen und Kunden) erfassen, sind Sie für deren Verarbeitung selbst verantwortlich. Der Betreiber der App erhebt diese Daten nicht.</p>
 
 <h2>7. Externe Dienste</h2>
-<p>Die App lädt keine Schriften, Skripte oder sonstigen Inhalte von Drittanbietern nach. Alle Programmdateien werden vom selben Server geladen wie die App selbst.</p>
+<p>Die App lädt keine Schriften, Skripte oder sonstigen Inhalte von Drittanbietern nach. Alle Programmdateien werden vom selben Server geladen wie die App selbst. Nur wenn Sie sich mit einem Benutzerkonto anmelden, verbindet sich die App mit dem Dienst aus Abschnitt 8.</p>
 
-<h2>8. Ihre Rechte</h2>
+<h2>8. Benutzerkonto und Cloud-Speicherung (optional)</h2>
+<p>Sie können ein Benutzerkonto anlegen, damit Ihre Daten in der Cloud gesichert und auf mehreren Geräten verfügbar sind. Dabei verarbeiten wir Ihre E-Mail-Adresse, Ihr Passwort (nur in geschützter, gehashter Form beim Dienstleister) und die Daten, die Sie in der App eingeben: Firmendaten, Kunden, Artikel, Belege und die archivierten Rechnungsdateien. Zweck ist die Bereitstellung von Anmeldung, Datensicherung und Synchronisierung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzungsverhältnis).</p>
+<p>Dienstleister (Auftragsverarbeiter) ist Supabase Inc. [Anschrift prüfen und eintragen]. Die Datenbank befindet sich in der Region [Region eintragen, z. B. EU (Frankfurt)]. [Bitte prüfen: Auftragsverarbeitungsvertrag mit Supabase abgeschlossen; Drittlandübermittlung (Datenschutzrahmen bzw. Standardvertragsklauseln).] Die E-Mails zur Bestätigung und zum Zurücksetzen des Passworts werden über [Name des E-Mail-Dienstleisters] versendet.</p>
+<p>Die Übertragung erfolgt verschlüsselt. Technisch kann jede Nutzerin und jeder Nutzer nur die eigenen Daten abrufen. Archivierte Rechnungsdateien können nach dem Speichern nicht mehr geändert werden.</p>
+<p>Speicherdauer und Löschung: Die Daten bleiben gespeichert, solange Ihr Konto besteht. In der App können Sie Ihr Konto jederzeit löschen. Dabei werden alle Cloud-Daten, auch die archivierten Dateien, endgültig gelöscht. Beim Abmelden werden die Daten von dem Gerät entfernt. Gesetzliche Aufbewahrungspflichten für Ihre Rechnungen und Belege liegen bei Ihnen. Bitte sichern Sie diese rechtzeitig selbst.</p>
+<p>Wenn Sie Daten Ihrer Kundinnen und Kunden in der Cloud speichern, sind Sie dafür verantwortlich. [Bitte prüfen: Rollenverteilung zwischen Betreiber und Nutzern sowie ggf. ein Auftragsverarbeitungsvertrag.]</p>
+
+<h2>9. Ihre Rechte</h2>
 <p>Sie haben nach der DSGVO das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21). Sie können sich außerdem bei einer Datenschutz-Aufsichtsbehörde beschweren (Art. 77), zuständig ist [zuständige Aufsichtsbehörde, Name und Anschrift].</p>
 
-<h2>9. Änderungen</h2>
-<p>Wenn die App erweitert wird (z. B. um Benutzerkonten oder eine Online-Speicherung), wird diese Erklärung entsprechend angepasst.</p>
+<h2>10. Änderungen</h2>
+<p>Wenn die App erweitert wird, wird diese Erklärung entsprechend angepasst.</p>
 <p class="mute">Stand: [Datum]</p>
 </main></body></html>
