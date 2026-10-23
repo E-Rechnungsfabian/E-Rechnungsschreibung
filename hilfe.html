@@ -58,7 +58,17 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p class="note">Ob und ab wann du E-Rechnungen ausstellen musst, hängt von deinem Umsatz und deinen Kunden ab. Frag dazu deinen Steuerberater. Prüfe die erste echte E-Rechnung bitte einmal mit einem Validator.</p>
 </details>
 
-<details><summary>5. Angebote und Lieferscheine</summary>
+<details><summary>5. E-Mail-Vorlagen und Versand</summary>
+<p>Für jede Belegart gibt es eine E-Mail-Vorlage mit Betreff und Text. Du findest sie im Tab „Stamm“ unter <b>E-Mail-Vorlagen</b>. Dort wählst du die Belegart und änderst Betreff und Text. Beim Erstellen der E-Mail füllt die App diese Platzhalter aus: {Kunde}, {Nummer}, {Datum}, {Betrag}, {Faellig}, {Firma}, {Absender}, {Telefon}, {Bezug} (Nummer der zugehörigen Rechnung) und {Mahnstufe}. „Vorlage zurücksetzen“ stellt den Standardtext wieder her.</p>
+<p><b>E-Mail erstellen:</b> Tab „Belege“, Beleg aufklappen.</p>
+<ul>
+<li><b>E-Mail-Entwurf (.eml):</b> erzeugt eine Datei, die du in einem E-Mail-Programm öffnest (z. B. Outlook oder Thunderbird am Computer). Sie enthält Empfänger (die E-Mail-Adresse aus dem Kunden), Betreff, Text und den Beleg als Anhang und öffnet sich als Entwurf, den du nur noch abschickst. Bei Rechnungen, Korrekturen und Gutschriften ist die E-Rechnung angehängt (PDF mit eingebettetem XML), sonst die normale PDF.</li>
+<li><b>Mit Mail-App teilen:</b> öffnet das Teilen-Menü deines iPhones mit dem Beleg und dem ausgefüllten Text. Wähle dort deine Mail-App. Ob Betreff und Text übernommen werden, hängt von der Mail-App ab. Die Empfängeradresse trägst du selbst ein.</li>
+</ul>
+<p class="note">Eine .eml-Datei lässt sich auf dem iPhone nicht in jeder Mail-App öffnen, nutze dort „Mit Mail-App teilen“. Die App versendet nichts selbst: Du schickst die E-Mail aus deinem eigenen Programm ab.</p>
+</details>
+
+<details><summary>6. Angebote und Lieferscheine</summary>
 <ul>
 <li><b>Angebot:</b> In „Neu“ oben „Angebot“ wählen. Es hat eine eigene Nummer und ein „Gültig bis“. Am gespeicherten Angebot gibt es <b>In Rechnung umwandeln</b> und <b>In Lieferschein umwandeln</b>.</li>
 <li><b>Lieferschein:</b> In „Neu“ oben „Lieferschein“ wählen oder aus einer Rechnung bzw. einem Angebot erzeugen. Er zeigt Mengen, keine Preise, und hat unten eine Zeile für die Unterschrift des Empfängers. Aus dem Lieferschein kannst du mit <b>In Rechnung umwandeln</b> eine Rechnung machen.</li>
@@ -66,7 +76,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p>Angebote und Lieferscheine sind keine Rechnungen, deshalb gibt es dafür keine E-Rechnung.</p>
 </details>
 
-<details><summary>6. Korrigieren und gutschreiben</summary>
+<details><summary>7. Korrigieren und gutschreiben</summary>
 <p>Beides startest du an einer gespeicherten Rechnung in „Belege“.</p>
 <ul>
 <li><b>Korrigieren:</b> erzeugt eine Rechnungskorrektur. Du änderst, was falsch war. Die Korrektur enthält die vollständigen, richtigen Angaben, verweist auf die ursprüngliche Rechnung (Nummer und Datum) und ersetzt sie. Als E-Rechnung wird sie als Korrekturrechnung gekennzeichnet.</li>
@@ -75,7 +85,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p>Die Originalrechnung bleibt unverändert in der Liste. Welche Variante buchhalterisch passt, besonders wenn die Rechnung schon bezahlt ist, klärst du mit deinem Steuerberater.</p>
 </details>
 
-<details><summary>7. Bezahlt und Mahnungen</summary>
+<details><summary>8. Bezahlt und Mahnungen</summary>
 <p>Bei jeder Rechnung steht in der Liste „offen“, „überfällig“ oder „bezahlt“. Mit <b>Als bezahlt markieren</b> (und wieder zurück) pflegst du das selbst.</p>
 <p>Bei nicht bezahlten Rechnungen gibt es den Button <b>Mahnung</b>:</p>
 <ul>
@@ -86,7 +96,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p>Das PDF enthält einen Standardtext je Stufe. Eine Mahnung ist keine Rechnung, es gibt dafür keine E-Rechnung.</p>
 </details>
 
-<details><summary>8. Archiv, Datensicherung und Produktivmodus (Tab „Firma“)</summary>
+<details><summary>9. Archiv, Datensicherung und Produktivmodus (Tab „Firma“)</summary>
 <ul>
 <li><b>Archiv der Originaldateien:</b> „Archiv prüfen“ vergleicht alle Dateien mit ihrem Prüfwert (SHA-256). „Archiv als ZIP exportieren“ erzeugt eine ZIP mit allen Dateien und einer Übersicht (index.csv).</li>
 <li><b>Datensicherung:</b> „Daten exportieren“ speichert alles (Firmendaten, Logo, Stamm, Belege und Archiv) in einer .json-Datei. Lege sie in der Dateien-App oder in iCloud ab. Mit „Sicherung wiederherstellen“ spielst du sie zurück. Das ersetzt deine aktuellen Daten, die App fragt vorher nach. Schon archivierte Dateien werden dabei nicht überschrieben.</li>
@@ -95,7 +105,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p class="note">Ohne Konto liegen deine Daten nur auf deinem Gerät. Sichere sie regelmäßig. Das gilt auch für die gesetzlichen Aufbewahrungsfristen, bei Rechnungen derzeit mindestens 8 Jahre.</p>
 </details>
 
-<details><summary>9. DATEV-Export</summary>
+<details><summary>10. DATEV-Export</summary>
 <p>Unter „Firma → DATEV-Export“ erzeugst du einen Buchungsstapel (CSV) für deinen Steuerberater.</p>
 <ol>
 <li>Beraternummer und Mandantennummer eintragen (bekommst du von deinem Steuerberater).</li>
@@ -106,7 +116,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p><b>Was exportiert wird:</b> Rechnungen (Soll Debitor, Haben Erlöskonto), Gutschriften (umgekehrt, mit der Nummer der Originalrechnung) und Rechnungskorrekturen (Storno der Originalrechnung plus neue Buchung). Angebote, Mahnungen und Lieferscheine werden nicht exportiert.</p>
 </details>
 
-<details><summary>10. Konto und Cloud (optional)</summary>
+<details><summary>11. Konto und Cloud (optional)</summary>
 <p>Mit einem Konto werden deine Daten in der Cloud gesichert und sind auf mehreren Geräten verfügbar. Ohne Konto bleibt alles nur auf diesem Gerät.</p>
 <ul>
 <li><b>Registrieren und Anmelden:</b> Gib im Tab „Firma“ ganz oben E-Mail und Passwort (mindestens 8 Zeichen) ein und tippe auf „Registrieren“. Eventuell musst du deine E-Mail-Adresse über einen Link bestätigen. Danach tippst du auf „Anmelden“.</li>
@@ -120,7 +130,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p class="note">Die gesetzlichen Aufbewahrungsfristen für deine Belege bleiben deine Aufgabe, auch mit Cloud. Sichere deine Daten und das Archiv regelmäßig zusätzlich selbst.</p>
 </details>
 
-<details><summary>11. Häufige Fragen</summary>
+<details><summary>12. Häufige Fragen</summary>
 <p><b>Das PDF wird nicht gespeichert.</b> Tippe in der Leiste unten auf „Öffnen“ oder „Teilen“. Erscheint eine Fehlermeldung, notiere den Text in Klammern.</p>
 <p><b>Meine Daten sind weg oder die App ist leer.</b> Die App auf dem Home-Bildschirm kann einen eigenen Datenspeicher haben, getrennt von Safari. Außerdem sind die Daten weg, wenn du die Website-Daten löschst. Spiele deine Sicherung unter „Firma → Datensicherung“ zurück.</p>
 <p><b>Die App zeigt eine alte Version.</b> Öffne sie einmal mit Internet. Schließe sie danach komplett und starte sie neu.</p>
@@ -128,7 +138,7 @@ details>*:not(summary){margin:0 0 12px}ul,ol{padding-left:22px}li{margin:4px 0}
 <p><b>Wo liegen meine Daten?</b> Ohne Konto nur auf deinem Gerät, in diesem Browser. Mit Konto zusätzlich in der Cloud. Siehe auch die <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
 </details>
 
-<details><summary>12. Wichtige Hinweise</summary>
+<details><summary>13. Wichtige Hinweise</summary>
 <ul>
 <li>Die App ist ein Hilfsmittel und ersetzt keine Steuer- oder Rechtsberatung. Für die Richtigkeit deiner Belege bist du selbst verantwortlich.</li>
 <li>Eine Verfahrensdokumentation, wie sie die GoBD verlangen, ist nicht Teil der App. Du beschreibst deine Abläufe separat.</li>

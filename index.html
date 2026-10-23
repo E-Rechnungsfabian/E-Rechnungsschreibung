@@ -30,8 +30,9 @@ section{background:var(--card);border:1px solid var(--line);border-radius:12px;p
 .g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .f{display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--mute)}
 .f.w{grid-column:1/-1}
-input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-width:0}
-input:focus,select:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-width:0}
+textarea{resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
 .chk{flex-direction:row;align-items:center;gap:10px;color:var(--ink);font-size:15px}
 .chk input{width:22px;height:22px}
 button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px}
@@ -170,12 +171,13 @@ function totals(){
 
 const pick=t=>{const L=t==='cust'?S.cust:S.art;return L.length?`<label class="f" style="margin-bottom:12px"><span>${t==='cust'?'Aus Kundenstamm wählen':'Artikel aus Stamm hinzufügen'}</span><select data-pick="${t}"><option value="">Auswählen …</option>${L.map((x,n)=>`<option value="${n}">${esc(x.name||x.d)}</option>`).join('')}</select></label>`:''};
 function viewStamm(){
+  if(sub==='mt')return viewMail();
   const cu=sub==='cust',L=cu?S.cust:S.art,ed=eI>=0;
   const form=cu?`${f('Name oder Firma','e.name',E.name,{w:1})}${f('Straße und Hausnummer','e.street',E.street,{w:1})}${f('PLZ','e.zip',E.zip,{m:'numeric'})}${f('Ort','e.city',E.city)}${f('E-Mail','e.mail',E.mail,{t:'email',w:1})}`
    :`${f('Bezeichnung','e.d',E.d,{w:1})}${f('Einheit','e.u',E.u??'Stk')}${f('Einzelpreis netto in €','e.p',E.p,{m:'decimal'})}${S.firm.ku?'':`<label class="f"><span>USt-Satz</span><select data-k="e.v">${[19,7,0].map(v=>`<option value="${v}" ${+(E.v??19)===v?'selected':''}>${v} %</option>`).join('')}</select></label>`}`;
   const list=L.map((x,n)=>`<div class="row item" style="flex-wrap:wrap"><span><b>${esc(cu?x.name:x.d)}</b><br><span class="note">${esc(cu?[x.street,[x.zip,x.city].filter(Boolean).join(' ')].filter(Boolean).join(', '):eur(Math.round(num(x.p)*100))+' / '+x.u+(S.firm.ku?'':' · '+x.v+' % USt'))}</span></span><span style="display:flex;gap:6px"><button data-sed="${n}">Bearbeiten</button><button class="danger" data-sdel="${n}">${armed==='s'+n?'Wirklich löschen?':'Löschen'}</button></span></div>`).join('');
   return `<h1>Stammdaten</h1><p class="sub">Kunden und Artikel, die du bei neuen Rechnungen mit einem Tipp übernehmen kannst.</p>
-  <div class="seg"><button data-sub="cust" aria-pressed="${cu}">Kunden</button><button data-sub="art" aria-pressed="${!cu}">Artikel</button></div>
+  ${segS()}
   <section><h2>${ed?(cu?'Kunde bearbeiten':'Artikel bearbeiten'):(cu?'Neuer Kunde':'Neuer Artikel')}</h2><div class="g">${form}</div>
   <div class="row" style="margin-top:12px;justify-content:flex-start;gap:8px"><button class="pri" style="width:auto;flex:1" data-sst>Speichern</button>${ed?'<button data-scancel>Abbrechen</button>':''}</div></section>
   ${L.length?`<section><h2>${cu?'Kunden':'Artikel'} (${L.length})</h2>${list}</section>`:`<p class="note">Noch ${cu?'keine Kunden':'keine Artikel'} gespeichert.</p>`}`;
@@ -239,6 +241,60 @@ function exportDatev(){
   const csv=[head,DNAMES.map(q).join(';'),...out].join('\r\n')+'\r\n';
   deliver(new File([cp1252(csv)],'EXTF_Buchungsstapel_'+from.slice(0,4)+'.csv',{type:'text/csv'}));
 }
+const MT_NAME={RE:'Rechnung',AN:'Angebot',KO:'Rechnungskorrektur',GS:'Gutschrift',MA:'Mahnung',LS:'Lieferschein'};
+const MT_DEF={
+ RE:{subject:'Rechnung {Nummer}',body:'Guten Tag {Kunde},\n\nanbei erhalten Sie unsere Rechnung {Nummer} vom {Datum} über {Betrag}. Bitte überweisen Sie den Betrag bis zum {Faellig}.\n\nBei Fragen melden Sie sich gerne.\n\nMit freundlichen Grüßen\n{Absender}\n{Firma}'},
+ AN:{subject:'Angebot {Nummer}',body:'Guten Tag {Kunde},\n\nvielen Dank für Ihre Anfrage. Anbei erhalten Sie unser Angebot {Nummer} vom {Datum} über {Betrag}. Es ist gültig bis zum {Faellig}.\n\nWir freuen uns auf Ihre Rückmeldung.\n\nMit freundlichen Grüßen\n{Absender}\n{Firma}'},
+ KO:{subject:'Rechnungskorrektur {Nummer} zu Rechnung {Bezug}',body:'Guten Tag {Kunde},\n\nanbei erhalten Sie die Rechnungskorrektur {Nummer} zu unserer Rechnung {Bezug}. Sie ersetzt die ursprüngliche Rechnung. Der korrigierte Rechnungsbetrag beträgt {Betrag}, fällig bis zum {Faellig}.\n\nBitte entschuldigen Sie die Umstände.\n\nMit freundlichen Grüßen\n{Absender}\n{Firma}'},
+ GS:{subject:'Gutschrift {Nummer} zu Rechnung {Bezug}',body:'Guten Tag {Kunde},\n\nanbei erhalten Sie die Gutschrift {Nummer} zu unserer Rechnung {Bezug} über {Betrag}.\n\nMit freundlichen Grüßen\n{Absender}\n{Firma}'},
+ MA:{subject:'{Mahnstufe} zur Rechnung {Bezug}',body:'Guten Tag {Kunde},\n\nzu unserer Rechnung {Bezug} konnten wir bisher keinen Zahlungseingang feststellen. Bitte überweisen Sie den offenen Betrag von {Betrag} bis zum {Faellig}. Das Schreiben finden Sie im Anhang.\n\nSollte sich Ihre Zahlung mit dieser Nachricht überschnitten haben, betrachten Sie sie bitte als gegenstandslos.\n\nMit freundlichen Grüßen\n{Absender}\n{Firma}'},
+ LS:{subject:'Lieferschein {Nummer}',body:'Guten Tag {Kunde},\n\nanbei erhalten Sie den Lieferschein {Nummer} vom {Datum}.\n\nMit freundlichen Grüßen\n{Absender}\n{Firma}'}
+};
+const mtGet=t=>({...MT_DEF[t],...((S.mt||{})[t]||{})});
+const fillMt=(s,r,type)=>{
+  const F=r.firm||S.firm,isMa=type==='MA';
+  const amt=isMa?r.ref.gross+Math.round(num(r.fee)*100)+Math.round(num(r.interest)*100):(r.items&&r.items.length?calc(r.items,r.ku).gross:0);
+  const M={Kunde:(r.c&&r.c.name)||'',Nummer:r.no,Datum:de(r.date),Betrag:type==='LS'?'':eur(amt),Faellig:r.due&&type!=='LS'?de(r.due):'',Firma:F.name||'',Absender:F.owner||F.name||'',Telefon:F.tel||'',Bezug:r.ref?r.ref.no:'',Mahnstufe:isMa?LV[r.level]:''};
+  return String(s).replace(/\{(\w+)\}/g,(m,k)=>k in M?M[k]:m);
+};
+const u8b64=s=>b64(new TextEncoder().encode(s));
+const w76=s=>(s.match(/.{1,76}/g)||[]).join('\r\n');
+const encW=s=>{
+  if(/^[\x20-\x7E]*$/.test(s))return s;
+  const out=[];let cur='',n=0;
+  for(const ch of s){const l=new TextEncoder().encode(ch).length;if(n+l>42){out.push(cur);cur='';n=0}cur+=ch;n+=l}
+  if(cur)out.push(cur);
+  return out.map(x=>'=?UTF-8?B?'+u8b64(x)+'?=').join('\r\n ');
+};
+async function buildEml(r,type,file){
+  const F=r.firm||S.firm,m=mtGet(type),subj=fillMt(m.subject,r,type).replace(/\s+/g,' ').trim(),body=fillMt(m.body,r,type).replace(/\r?\n/g,'\r\n');
+  const bd='----=_Rechnung_'+Math.random().toString(36).slice(2),fnm=file.name.replace(/[^\x20-\x7E]/g,'_').replace(/"/g,"'");
+  const to=(r.c&&r.c.mail)||'',nm=F.name?(/^[\x20-\x7E]*$/.test(F.name)?'"'+F.name.replace(/["\\]/g,'')+'"':encW(F.name)):'';
+  const from=F.mail?(nm?nm+' <'+F.mail+'>':F.mail):'';
+  const bytes=new Uint8Array(await file.arrayBuffer());
+  const head=['X-Unsent: 1',from&&'From: '+from,to&&'To: '+to,'Subject: '+encW(subj),'MIME-Version: 1.0','Content-Type: multipart/mixed; boundary="'+bd+'"'].filter(Boolean).join('\r\n');
+  return [head,'','--'+bd,'Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: base64','',w76(u8b64(body)),'--'+bd,'Content-Type: '+(file.type||'application/pdf')+'; name="'+fnm+'"','Content-Transfer-Encoding: base64','Content-Disposition: attachment; filename="'+fnm+'"','',w76(b64(bytes)),'--'+bd+'--',''].join('\r\n');
+}
+async function mailOut(file,n,share){
+  const type=lt,r=LS(type)[n];
+  if(share){
+    const m=mtGet(type),data={files:[file],title:fillMt(m.subject,r,type),text:fillMt(m.body,r,type)};
+    try{if(navigator.canShare&&navigator.canShare(data)){await navigator.share(data);return}}catch(e){if(e&&e.name==='AbortError')return}
+  }
+  const eml=await buildEml(r,type,file);
+  await deliver(new File([eml],'E-Mail-'+MT_NAME[type]+'-'+String(r.no).replace(/[^\x20-\x7E]/g,'_')+'.eml',{type:'message/rfc822'}));
+}
+const segS=()=>`<div class="seg"><button data-sub="cust" aria-pressed="${sub==='cust'}">Kunden</button><button data-sub="art" aria-pressed="${sub==='art'}">Artikel</button><button data-sub="mt" aria-pressed="${sub==='mt'}">E-Mail-Vorlagen</button></div>`;
+function viewMail(){
+  const t=X.mt||'RE',m=mtGet(t);
+  return `<h1>Stammdaten</h1><p class="sub">Kunden, Artikel und E-Mail-Vorlagen für deine Belege.</p>${segS()}
+  <section><h2>E-Mail-Vorlagen</h2><p class="note" style="margin:0 0 10px">Für jede Belegart gibt es eine eigene Vorlage. Platzhalter: {Kunde} {Nummer} {Datum} {Betrag} {Faellig} {Firma} {Absender} {Telefon} {Bezug} {Mahnstufe}</p>
+  <label class="f w"><span>Belegart</span><select data-k="x.mt">${Object.entries(MT_NAME).map(([k,v])=>`<option value="${k}" ${k===t?'selected':''}>${v}</option>`).join('')}</select></label>
+  <label class="f w" style="margin-top:10px"><span>Betreff</span><input data-k="mt.${t}.subject" value="${esc(m.subject)}" autocomplete="off"></label>
+  <label class="f w" style="margin-top:10px"><span>Text</span><textarea rows="11" data-k="mt.${t}.body">${esc(m.body)}</textarea></label>
+  <button data-mtreset="${t}" style="margin-top:12px">Vorlage zurücksetzen</button></section>
+  <p class="note">So verschickst du einen Beleg: Tab „Belege“, Beleg aufklappen, dann „E-Mail-Entwurf (.eml)“ oder „Mit Mail-App teilen“.</p>`;
+}
 function viewList(){
   const AN=lt==='AN',KO=lt==='KO',GS=lt==='GS',MA=lt==='MA',LF=lt==='LS',L=LS(lt);
   const seg=`<div class="seg">${[['RE','Rechnungen'],['AN','Angebote'],['KO','Korrekturen'],['GS','Gutschriften'],['MA','Mahnungen'],['LS','Lieferscheine']].map(([k,t])=>`<button data-lt="${k}" aria-pressed="${lt===k}">${t}</button>`).join('')}</div>`;
@@ -248,7 +304,7 @@ function viewList(){
     return `<details><summary><div class="row"><span><b>${esc(r.no)}</b><br><span class="note">${esc(r.c.name)} · ${de(r.date)}${lt==='RE'?' · '+(r.paid?'bezahlt':r.due<today()?'überfällig':'offen'):''}</span></span><b>${LF?r.items.length+' Pos.':eur(c.gross)}</b></div></summary>
     <div class="lines">${r.items.map(i=>`<div><span>${esc(i.q)} ${esc(i.u)} ${esc(i.d)}</span><span>${LF?'':eur(line(i))}</span></div>`).join('')}</div>
     <p class="note">${MA?`${LV[r.level]} zu Rechnung ${esc(r.ref.no)} vom ${de(r.ref.date)} · Zahlung bis ${de(r.due)}`:`${KO||GS?`${GS?'Gutschrift zu':'Korrigiert'} Rechnung ${esc(r.ref.no)} vom ${de(r.ref.date)}${GS?'':' · '}`:''}${GS?'':LF?'Lieferdatum '+de(r.date):(AN?'Gültig bis':'Fällig am')+' '+de(r.due)}`}${r.ku&&!LF?' · Kleinunternehmer ohne USt':''}</p>
-    <button data-pdf="${n}" style="margin-right:8px">PDF speichern</button>${MA?'':LF?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button>`:AN?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button><button data-tols="${n}" style="margin-right:8px">In Lieferschein umwandeln</button>`:`<button data-zpdf="${n}" style="margin-right:8px">E-Rechnung (Test)</button>${KO||GS?'':`<button data-kor="${n}" style="margin-right:8px">Korrigieren</button><button data-gs="${n}" style="margin-right:8px">Gutschrift</button><button data-tols="${n}" style="margin-right:8px">Lieferschein</button><button data-paid="${n}" style="margin-right:8px">${r.paid?'Als offen markieren':'Als bezahlt markieren'}</button>${r.paid?'':`<button data-mah="${n}" style="margin-right:8px">Mahnung</button>`}`}`}${S.firm.live&&!(AN||LF||MA)?'<span class="note">Gesperrt (Produktivmodus)</span>':''}<button class="danger" data-del="${n}"${S.firm.live&&!(AN||LF||MA)?' hidden':''}>${armed===n?'Wirklich löschen?':(AN?'Angebot löschen':KO?'Korrektur löschen':GS?'Gutschrift löschen':MA?'Mahnung löschen':LF?'Lieferschein löschen':'Rechnung löschen')}</button></details>`}).join('')+`</section>`;
+    <button data-pdf="${n}" style="margin-right:8px">PDF speichern</button><button data-mail="${n}" style="margin-right:8px">E-Mail-Entwurf (.eml)</button><button data-mailshare="${n}" style="margin-right:8px">Mit Mail-App teilen</button>${MA?'':LF?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button>`:AN?`<button data-conv="${n}" style="margin-right:8px">In Rechnung umwandeln</button><button data-tols="${n}" style="margin-right:8px">In Lieferschein umwandeln</button>`:`<button data-zpdf="${n}" style="margin-right:8px">E-Rechnung (Test)</button>${KO||GS?'':`<button data-kor="${n}" style="margin-right:8px">Korrigieren</button><button data-gs="${n}" style="margin-right:8px">Gutschrift</button><button data-tols="${n}" style="margin-right:8px">Lieferschein</button><button data-paid="${n}" style="margin-right:8px">${r.paid?'Als offen markieren':'Als bezahlt markieren'}</button>${r.paid?'':`<button data-mah="${n}" style="margin-right:8px">Mahnung</button>`}`}`}${S.firm.live&&!(AN||LF||MA)?'<span class="note">Gesperrt (Produktivmodus)</span>':''}<button class="danger" data-del="${n}"${S.firm.live&&!(AN||LF||MA)?' hidden':''}>${armed===n?'Wirklich löschen?':(AN?'Angebot löschen':KO?'Korrektur löschen':GS?'Gutschrift löschen':MA?'Mahnung löschen':LF?'Lieferschein löschen':'Rechnung löschen')}</button></details>`}).join('')+`</section>`;
 }
 
 function render(){
@@ -262,7 +318,8 @@ document.addEventListener('input',e=>{
   const t=e.target,k=t.dataset.k;if(!k)return;
   const v=t.type==='checkbox'?t.checked:t.value,p=k.split('.');
   if(p[0]==='firm'){S.firm[p[1]]=v;save();if(p[1]==='skr')render();if(p[1]==='ku'){D.items.forEach(i=>i.v=v?0:19);}}
-  else if(p[0]==='x')X[p[1]]=v;
+  else if(p[0]==='mt'){S.mt=S.mt||{};(S.mt[p[1]]=S.mt[p[1]]||{})[p[2]]=v;save()}
+  else if(p[0]==='x'){X[p[1]]=v;if(p[1]==='mt')render()}
   else if(p[0]==='e')E[p[1]]=v;
   else if(p[0]==='c')D.c[p[1]]=v;
   else if(p[0]==='d'){D[p[1]]=v;if(D.t==='MA')mtot()}
@@ -276,6 +333,9 @@ document.addEventListener('click',e=>{
   else if(b.dataset.rm!==undefined){D.items.splice(+b.dataset.rm,1);render()}
   else if(b.dataset.del!==undefined){const n=+b.dataset.del;if(armed===n){LS(lt).splice(n,1);armed=-1;save()}else armed=n;render()}
   else if('rmlogo' in b.dataset){delete S.logo;save();render()}
+  else if(b.dataset.mail!==undefined)makePdf(+b.dataset.mail,['RE','KO','GS'].includes(lt)?1:0,1);
+  else if(b.dataset.mailshare!==undefined)makePdf(+b.dataset.mailshare,['RE','KO','GS'].includes(lt)?1:0,2);
+  else if(b.dataset.mtreset){if(S.mt)delete S.mt[b.dataset.mtreset];save();render()}
   else if(b.dataset.pdf!==undefined)makePdf(+b.dataset.pdf);
   else if(b.dataset.zpdf!==undefined)makePdf(+b.dataset.zpdf,1);
   else if(b.dataset.kor!==undefined){const r=S.inv[+b.dataset.kor];D={t:'KO',c:{...r.c},date:today(),sdate:r.sdate,items:r.items.map(i=>({...i})),ref:{no:r.no,date:r.date}};view='new';render();window.scrollTo(0,0)}
@@ -550,7 +610,7 @@ async function deliver(file){
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:file.name});return}}catch(e){if(e&&e.name==='AbortError')return}
   ready(file);
 }
-async function makePdf(n,z){
+async function makePdf(n,z,mail){
   if(!window.PDFLib||!window.fontkit){toast('Die PDF-Bibliothek konnte nicht geladen werden. Bitte Verbindung prüfen.');return}
   try{
   const dl=window.claude&&typeof claude.use==='function'?await Promise.resolve(claude.use('downloads')).catch(()=>null):null;
@@ -558,7 +618,7 @@ async function makePdf(n,z){
   if(z&&!F.taxno&&!F.vatid){toast('Für die E-Rechnung fehlt die Steuernummer oder USt-IdNr. im Tab „Firma“.');return}
   const key=lt+':'+r.no+':'+(z?'z':'p'),fnA=(AN?'Angebot-':KO?'Korrektur-':GS?'Gutschrift-':MA?'Mahnung-':LF?'Lieferschein-':'Rechnung-')+r.no+(z?'-zugferd':'')+'.pdf';
   const old=await arcGet(key);
-  if(old){await deliver(new File([old.bytes],old.name,{type:'application/pdf'}));toast('Archivierte Originaldatei ausgegeben.');return}
+  if(old){const f=new File([old.bytes],old.name,{type:'application/pdf'});if(mail)await mailOut(f,n,mail===2);else{await deliver(f);toast('Archivierte Originaldatei ausgegeben.')}return}
   const doc=await PDFDocument.create({updateMetadata:false});doc.registerFontkit(fontkit);const u8=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0)),reg=await doc.embedFont(u8(FR),{subset:true}),bol=await doc.embedFont(u8(FB),{subset:true});
   const W=595.28,H=841.89,M=56,ink=rgb(.08,.15,.18),mute=rgb(.36,.42,.45),acc=rgb(.04,.42,.5);
   const san=s=>String(s??'').replace(/[^\x20-\x7E\xA0-\xFF\u20AC\u2013\u2014\u2018\u2019\u201C\u201D\u201E\u2022]/g,'?');
@@ -615,7 +675,7 @@ async function makePdf(n,z){
   const ok=await arcPut({id:key,type:lt,no:r.no,variant:z?'zugferd':'pdf',name:fn,bytes,size:bytes.length,sha256:await sha256(bytes),created:new Date().toISOString()});
   if(!ok)toast('Hinweis: Das Archiv ist in diesem Browser nicht verfügbar, die Datei wurde nicht archiviert.');
   else if(CLOUD&&SES)syncArchive().catch(()=>{});
-  await deliver(new File([bytes],fn,{type:'application/pdf'}));
+  {const f=new File([bytes],fn,{type:'application/pdf'});if(mail)await mailOut(f,n,mail===2);else await deliver(f)}
   }catch(e){if(e&&(e.code==='declined'||e.name==='AbortError'))return;toast('PDF konnte nicht erstellt werden ('+(e&&e.name?e.name+': '+e.message:e)+').')}
 }
 const hl=CLOUD?hashLogin():false;
